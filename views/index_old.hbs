@@ -1,0 +1,69 @@
+<!--<h1>{{title}}</h1>
+<p>Welcome to {{title}}</p>-->
+<script>
+    var slots = {{{slotstring}}}
+    console.log(slots);
+</script>
+<body>
+    <!--{{{slotstring}}}-->
+    {{#each slots}}
+    <table style="max-width: 800px; width: 100%; margin-bottom: 20px;" border=1>
+        <tr>
+            <td>Slot</td><td>{{this.id}} ({{this.hexid}})</td>
+        </tr>
+        <tr>
+            <td>Name</td><td>{{this.name}}</td>
+        </tr>
+        <tr>
+            <td>Type</td><td>Yubikey</td>
+        </tr>
+        <tr>
+            <td>Provisioned</td><td>{{#if this.cert}}TRUE{{else}}FALSE{{/if}}</td>
+        </tr>
+        <tr>
+            <td>Token Label</td><td>{{{this.[token label]}}}</td>
+        </tr>
+        <tr>
+            <td>Serial Number</td><td>{{{this.[serial num]}}}</td>
+        </tr>
+        <tr>
+            <td>Token Options</td>
+            <td>
+                {{#if this.cert}}<input type="button" value="Attest"/>{{else}}<input type="button" value="Provision"/>{{/if}}
+                <input type="button" value="Change PIN"/>
+                <input type="button" value="Change SO PIN"/>
+            </td>
+        </tr>
+        <tr>
+            <td>Slots</td>
+            <td>
+                {{#each this.objects}}
+                <table style="width: 100%;" border=1>
+                    <tr>
+                        <td>{{@key}}</td>
+                    </tr>
+                    <tr>
+                        <td>
+                            {{#each this}}
+                                {{#each this}}
+                                    <table style="width: 100%;" border=1>
+                                        <td>Options</td>
+                                        <td><input type="button" value="Delete"/></td>
+                                    {{#each this}}
+                                        <tr>
+                                            <td>{{@key}}</td><td class="{{@key}}">{{this}}</td>
+                                        </tr>
+                                    {{/each}}
+                                    </table>
+                                    <hr>
+                                {{/each}}
+                            {{/each}}
+                        </td>
+                    </tr>
+                </table>
+                {{/each}}
+            </td>
+        </tr>
+    </table>
+    {{/each}}
+</body>

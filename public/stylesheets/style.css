@@ -1,0 +1,17 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.base64 {
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+input[type="button"] {
+  margin-right: 5px;
+}

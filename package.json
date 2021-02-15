@@ -1,0 +1,22 @@
+{
+  "name": "pkcs11iot",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "dependencies": {
+    "bootstrap": "^4.6.0",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "hbs": "~4.0.4",
+    "http-errors": "~1.6.3",
+    "jquery": "^3.5.1",
+    "morgan": "~1.9.1",
+    "mqtt": "^4.2.6",
+    "pubnub": "^4.29.11",
+    "uuid": "^8.3.2",
+    "node-openssl-cert": "git+https://github.com/lspiehler/node-openssl-cert.git"
+  }
+}

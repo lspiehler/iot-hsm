@@ -1,0 +1,418 @@
+<script>
+    var slots = {{{slotstring}}}
+    console.log(slots);
+</script>
+<script>
+    window.onload = function() {
+        for(let i = 0; i <= slots.length - 1; i++) {
+            if(slots[i].hasOwnProperty('token state') && slots[i]['token state']=='uninitialized') {
+                //skip
+            } else {
+                let table = document.createElement('table');
+                table.style.maxWidth = '800px';
+                table.style.width = '100%';
+                table.style.marginTop = '10px';
+                table.style.marginBottom = '10px';
+                table.border = 1;
+                document.body.appendChild(table);
+                let slotprops = Object.keys(slots[i]);
+                let slotobjects = Object.keys(slots[i].objects);
+                for(let j = 0; j <= slotprops.length - 1; j++) {
+                    let row = table.insertRow(table.rows.length);
+                    let cell0 = row.insertCell(0);
+                    cell0.innerText = slotprops[j];
+                    let cell1 = row.insertCell(1);
+                    if(slotprops[j]!='objects') {
+                        cell1.innerText = slots[i][slotprops[j]];
+                    } else {
+                        let table = document.createElement('table');
+                        table.id = 'table' + slots[i]['serial num'];
+                        table.border = 0;
+                        table.style.width = '100%';
+                        if(slotobjects.length >= 1) {
+                            cell1.appendChild(table);
+                        } else {
+                            cell1.innerText = 'NULL';
+                        }
+                    }
+                }
+                //create slot options
+                let row = table.insertRow(table.rows.length - 1);
+                let cell0 = row.insertCell(0);
+                cell0.innerText = 'Options';
+                let cell1 = row.insertCell(1);
+                //create slot options for softhsm
+                if(slots[i]['token manufacturer']=='SoftHSM project') {
+                    let input = document.createElement('input');
+                    input.type = 'button';
+                    input.value = 'Delete SoftHSM2 Slot';
+                    input.addEventListener('click', function(e) {
+                        let serial = slots[i]['serial num'];
+                        deleteSoftHSM2Slot({serial: serial});
+                    });
+                    cell1.appendChild(input);
+                }
+
+                let keypairgeninput = document.createElement('input');
+                keypairgeninput.type = 'button';
+                keypairgeninput.value = 'Generate Key Pair';
+                keypairgeninput.addEventListener('click', function(e) {
+                    let module = slots[i].modulePath;
+                    let slotid = slots[i].hexid;
+                    let serial = slots[i]['serial num'];
+                    console.log(serial);
+                    document.getElementById('keypairgenmodule').value = module;
+                    document.getElementById('keypairgenslotid').value = slotid;
+                    document.getElementById('keypairgenserial').value = serial;
+                    //generateKeyPair({module: module, slotid: slotid});
+                    $('#generateKeyPairModal').modal('show');
+                });
+                cell1.appendChild(keypairgeninput);
+
+                let keypairimportinput = document.createElement('input');
+                keypairimportinput.type = 'button';
+                keypairimportinput.value = 'Import Private Key';
+                keypairimportinput.addEventListener('click', function(e) {
+                    /*let module = slots[i].modulePath;
+                    let slotid = slots[i].hexid;
+                    let serial = slots[i].serial;
+                    document.getElementById('keypairgenmodule').value = module;
+                    document.getElementById('keypairgenslotid').value = slotid;
+                    document.getElementById('keypairgenserial').value = serial;
+                    //generateKeyPair({module: module, slotid: slotid});
+                    $('#generateKeyPairModal').modal('show');*/
+                });
+                cell1.appendChild(keypairimportinput);
+
+                let userpininput = document.createElement('input');
+                userpininput.type = 'button';
+                userpininput.value = 'Change User PIN';
+                userpininput.addEventListener('click', function(e) {
+                    /*let module = slots[i].modulePath;
+                    let slotid = slots[i].hexid;
+                    document.getElementById('keypairgenmodule').value = module;
+                    document.getElementById('keypairgenslotid').value = slotid;
+                    //generateKeyPair({module: module, slotid: slotid});
+                    $('#generateKeyPairModal').modal('show');*/
+                });
+                cell1.appendChild(userpininput);
+
+                let sopininput = document.createElement('input');
+                sopininput.type = 'button';
+                sopininput.value = 'Change SO PIN';
+                sopininput.addEventListener('click', function(e) {
+                    /*let module = slots[i].modulePath;
+                    let slotid = slots[i].hexid;
+                    document.getElementById('keypairgenmodule').value = module;
+                    document.getElementById('keypairgenslotid').value = slotid;
+                    //generateKeyPair({module: module, slotid: slotid});
+                    $('#generateKeyPairModal').modal('show');*/
+                });
+                cell1.appendChild(sopininput);
+
+                for(let j = 0; j <= slotobjects.length - 1; j++) {
+                    let table = document.getElementById('table' + slots[i]['serial num']);
+                    let tablerow0 = table.insertRow(table.rows.length);
+                    let tablerow0cell0 = tablerow0.insertCell(0);
+                    //orow0cell0.id = 'objecttable' + slots[i]['serial num'];
+                    //orow0cell0.innerText = slotobjects[j];
+                    //let orow1 = table.insertRow(table.rows.length);
+                    //let orow1cell0 = orow1.insertCell(0);
+                    let objecttable = document.createElement('table');
+                    objecttable.id = 'objecttable' + slots[i]['serial num'] + slotobjects[j];
+                    objecttable.border = 1;
+                    objecttable.style.width = '100%';
+                    tablerow0cell0.appendChild(objecttable);
+                    let objecttablerow0 = objecttable.insertRow(objecttable.rows.length);
+                    let objecttablerow0cell0 = objecttablerow0.insertCell(0);
+                    objecttablerow0cell0.style.textAlign = 'center';
+                    objecttablerow0cell0.innerText = 'Object ' + slotobjects[j];
+                    let types = Object.keys(slots[i].objects[slotobjects[j]]);
+                    //console.log(slots[i].objects[slotobjects[j]].length);
+                    for(let k = 0; k <= types.length - 1; k++) {
+                        //console.log(types[k]);
+                        //let table = document.getElementById('objecttable' + slots[i]['serial num'] + slotobjects[j]);
+                        //let orow0 = table.insertRow(table.rows.length);
+                        //let orow0cell0 = orow0.insertCell(0);
+                        //let objecttable = document.createElement('table');
+                        //objecttable.id = 'objecttable' + slots[i]['serial num'] + slotobjects[j] + k;
+                        //objecttable.border = 1;
+                        //objecttable.style.width = '100%';
+                        //orow0cell0.appendChild(objecttable);
+                        //console.log('objecttable' + slots[i]['serial num'] + slotobjects[j] + k);
+                        //orow0cell0.innerText = types[k];
+                        for(let l = 0; l <= slots[i].objects[slotobjects[j]][types[k]].length - 1; l++) {
+                            let table0 = document.getElementById('objecttable' + slots[i]['serial num'] + slotobjects[j]);
+                            let table0row0 = table0.insertRow(table0.rows.length);
+                            let table0row0cell0 = table0row0.insertCell(0);
+                            let objecttabletype = document.createElement('table');
+                            objecttabletype.style.width = '100%';
+                            objecttabletype.id = 'objecttabletype' + slots[i]['serial num'] + slotobjects[j] + k;
+                            objecttabletype.border = 1;
+                            //table0row0cell0.innerText = types[k];
+                            table0row0cell0.appendChild(objecttabletype);
+                            let objecttabletyperow0 = objecttabletype.insertRow(objecttabletype.rows.length);
+                            let objecttabletyperow0cell0 = objecttabletyperow0.insertCell(0);
+                            objecttabletyperow0cell0.innerText = types[k] + ' (' + slotobjects[j] + ')';
+                            objecttabletyperow0cell0.style.textAlign = 'center';
+                            let objecttabletyperow1 = objecttabletype.insertRow(objecttabletype.rows.length);
+                            let objecttabletyperow1cell0 = objecttabletyperow1.insertCell(0);
+                            let objecttableitem = document.createElement('table');
+                            objecttableitem.style.width = '100%';
+                            objecttableitem.border = 1;
+                            objecttableitem.id = 'objecttableitem' + slots[i]['serial num'] + slotobjects[j] + k + l;
+                            objecttabletyperow1cell0.appendChild(objecttableitem);
+                            let objectprops = Object.keys(slots[i].objects[slotobjects[j]][types[k]][l]);
+                            for(let m = 0; m <= objectprops.length - 1; m++) {
+                                //console.log(slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]])
+                                //console.log('objecttable' + slots[i]['serial num'] + slotobjects[j] + k);
+                                let table = document.getElementById('objecttableitem' + slots[i]['serial num'] + slotobjects[j] + k + l);
+                                //console.log(table);
+                                let row0 = table.insertRow(table.rows.length);
+                                let cell0 = row0.insertCell(0);
+                                cell0.innerText = objectprops[m];
+                                let cell1 = row0.insertCell(1);
+                                cell1.className = objectprops[m];
+                                cell1.innerText = slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]];
+                            }
+                            //console.log(table);
+                            let row0 = objecttableitem.insertRow(objecttableitem.rows.length);
+                            let cell0 = row0.insertCell(0);
+                            cell0.innerText = 'Options';
+                            let cell1 = row0.insertCell(1);
+                            let inputdelete = document.createElement('input');
+                            inputdelete.type = 'button';
+                            inputdelete.value = 'Delete';
+                            inputdelete.addEventListener('click', function(e) {
+                                let type = types[k];
+                                let objectid = slotobjects[j];
+                                let module = slots[i].modulePath;
+                                let slotid = slots[i].hexid;
+                                console.log('Type: ' + type);
+                                console.log('Object Id: ' + objectid);
+                                console.log('Module Path: ' + module);
+                                console.log('Slot Id: ' + slotid);
+                                deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
+                            });
+                            cell1.appendChild(inputdelete);
+
+                            if(types[k]=='Public Key Object') {
+                                let generatecsrinput = document.createElement('input');
+                                generatecsrinput.type = 'button';
+                                generatecsrinput.value = 'Generate CSR';
+                                generatecsrinput.addEventListener('click', function(e) {
+                                    /*let module = slots[i].modulePath;
+                                    let slotid = slots[i].hexid;
+                                    let serial = slots[i].serial;
+                                    document.getElementById('keypairgenmodule').value = module;
+                                    document.getElementById('keypairgenslotid').value = slotid;
+                                    document.getElementById('keypairgenserial').value = serial;
+                                    //generateKeyPair({module: module, slotid: slotid});
+                                    $('#generateKeyPairModal').modal('show');*/
+                                });
+                                cell1.appendChild(generatecsrinput);
+
+                                let certimportinput = document.createElement('input');
+                                certimportinput.type = 'button';
+                                certimportinput.value = 'Import Certificate';
+                                certimportinput.addEventListener('click', function(e) {
+                                    /*let module = slots[i].modulePath;
+                                    let slotid = slots[i].hexid;
+                                    let serial = slots[i].serial;
+                                    document.getElementById('keypairgenmodule').value = module;
+                                    document.getElementById('keypairgenslotid').value = slotid;
+                                    document.getElementById('keypairgenserial').value = serial;
+                                    //generateKeyPair({module: module, slotid: slotid});
+                                    $('#generateKeyPairModal').modal('show');*/
+                                });
+                                cell1.appendChild(certimportinput);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function deleteObject(params) {
+        var r = confirm("Are you sure you want to delete the \"" + params.type + "\" with ID " + params.objectid + " on slot " + params.slotid + " with module " + params.module + "?");
+        if (r == true) {
+            //let prompt = prompt('Enter the SO PIN');
+            let request = params;
+            params.sopin = '010203040506070801020304050607080102030405012345';
+            postRequest('/api/pkcs11/delete', request, function(err, resp) {
+                if(err) {
+                    alert(resp.message);
+                    //console.log(response);
+                } else {
+                    //console.log(resp);
+                    location.reload();
+                }
+            });
+        } else {
+            txt = "You pressed Cancel!";
+        }
+    }
+
+    function deleteSoftHSM2Slot(params) {
+        var r = confirm('Are you sure you want to delete the softHSM2 slot with serial number ' + params.serial  + '?');
+        if (r == true) {
+            postRequest('/api/softhsm2/delete', params, function(err, resp) {
+                if(err) {
+                    alert(resp.message);
+                    //console.log(response);
+                } else {
+                    //console.log(resp);
+                    location.reload();
+                }
+            });
+        } else {
+            txt = "You pressed Cancel!";
+        }
+    }
+
+    function createSoftHSM2Slot() {
+        //console.log('hello');
+        let label = document.getElementById('createSoftHSM2SlotInputLabel');
+        let sopin = document.getElementById('createSoftHSM2SlotInputSOPin');
+        let pin = document.getElementById('createSoftHSM2SlotInputPin');
+        postRequest('/api/softhsm2/create', {label: label.value, sopin: sopin.value, pin: pin.value}, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+
+    function generateKeyPair() {
+        //console.log('hello');
+        let label = document.getElementById('keyPairInputLabel');
+        let pin = document.getElementById('keyPairInputPin');
+        let keypairgenslotid = document.getElementById('keypairgenslotid');
+        let keypairgenserial = document.getElementById('keypairgenserial');
+        let keypairgenmodule = document.getElementById('keypairgenmodule');
+        let keyPairIDSelect = document.getElementById('keyPairIDSelect');
+        let keyPairKeySelect = document.getElementById('keyPairKeySelect');
+        let loginTypeSelect = document.getElementById('loginTypeSelect');
+
+        postRequest('/api/pkcs11/generatekey', {
+                label: label.value,
+                pin: pin.value,
+                slotid: keypairgenslotid.value,
+                serial: keypairgenserial.value,
+                module: keypairgenmodule.value,
+                objectid: keyPairIDSelect.options[keyPairIDSelect.selectedIndex].value,
+                keytype: keyPairKeySelect.options[keyPairKeySelect.selectedIndex].value,
+                logintype: loginTypeSelect.options[loginTypeSelect.selectedIndex].value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+</script>
+<body>
+    <input type="button" value="Create SoftHSM2 Slot" class="btn btn-primary" data-toggle="modal" data-target="#createSoftHSM2SlotModal" />
+    <div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createSoftHSM2SlotModalLabel">Create a SoftHSM2 Slot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="createSoftHSM2Slot(); return false;">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputLabel">Label</label>
+                            <input type="text" class="form-control" id="createSoftHSM2SlotInputLabel" name="createSoftHSM2SlotInputLabel" aria-describedby="createSoftHSM2SlotInputHelp" placeholder="SoftHSM2 Label Name">
+                            <small id="createSoftHSM2SlotInputHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputSOPin">SO PIN</label>
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="010203040506070801020304050607080102030405060708">
+                            <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN <br />Default: 010203040506070801020304050607080102030405060708</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputPin">User PIN</label>
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" aria-describedby="createSoftHSM2SlotInputPinHelp" value="12345678" placeholder="">
+                            <small id="createSoftHSM2SlotInputPinHelp" class="form-text text-muted">Enter the user PIN</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Create SoftHSM2" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="generateKeyPairModal" tabindex="-1" role="dialog" aria-labelledby="generateKeyPairModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateKeyPairModalLabel">Generate Key Pair</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="generateKeyPair(); return false;">
+                <input type="hidden" value="" name="keypairgenslotid" id="keypairgenslotid">
+                <input type="hidden" value="" name="keypairgenmodule" id="keypairgenmodule">
+                <input type="hidden" value="" name="keypairgenserial" id="keypairgenserial">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label for="keyPairInputLabel">Label</label>
+                            <input type="text" class="form-control" id="keyPairInputLabel" name="keyPairInputLabel" aria-describedby="keyPairInputLabelHelp" placeholder="SoftHSM2 Label Name">
+                            <small id="keyPairInputLabelHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairIDSelect">Slot Object ID</label>
+                            <select class="form-control" id="keyPairIDSelect" name="keyPairIDSelect">
+                                <option>00</option>
+                                <option>01</option>
+                                <option>02</option>
+                                <option>03</option>
+                                <option>04</option>
+                                <option>05</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairKeySelect">Private Key</label>
+                            <select class="form-control" id="keyPairKeySelect" name="keyPairKeySelect">
+                                <option>rsa:2048</option>
+                                <option>rsa:4096</option>
+                                <option>EC:prime256v1</option>
+                                <option>EC:secp384r1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginTypeSelect">Private Key</label>
+                            <select class="form-control" id="loginTypeSelect" name="loginTypeSelect">
+                                <option>User</option>
+                                <option>Security Officer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairInputPin">PIN</label>
+                            <input type="password" class="form-control" id="keyPairInputPin" name="keyPairInputPin" aria-describedby="keyPairInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                            <small id="keyPairInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Generate Key Pair" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+</body>
