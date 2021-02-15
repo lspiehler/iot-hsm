@@ -73,14 +73,14 @@
                 keypairimportinput.type = 'button';
                 keypairimportinput.value = 'Import Private Key';
                 keypairimportinput.addEventListener('click', function(e) {
-                    /*let module = slots[i].modulePath;
+                    let module = slots[i].modulePath;
                     let slotid = slots[i].hexid;
-                    let serial = slots[i].serial;
-                    document.getElementById('keypairgenmodule').value = module;
-                    document.getElementById('keypairgenslotid').value = slotid;
-                    document.getElementById('keypairgenserial').value = serial;
-                    //generateKeyPair({module: module, slotid: slotid});
-                    $('#generateKeyPairModal').modal('show');*/
+                    let serial = slots[i]['serial num'];
+                    console.log(serial);
+                    document.getElementById('keypairimpmodule').value = module;
+                    document.getElementById('keypairimpslotid').value = slotid;
+                    document.getElementById('keypairimpserial').value = serial;
+                    $('#importPrivateKeyModal').modal('show');
                 });
                 cell1.appendChild(keypairimportinput);
 
@@ -239,6 +239,40 @@
         }
     }
 
+    function importPrivateKey() {
+        let label = document.getElementById('keyPairImportInputLabel');
+        let pin = document.getElementById('importPrivateKeyInputPin');
+        let serial = document.getElementById('keypairimpserial');
+        let module = document.getElementById('keypairimpmodule');
+        let slotid = document.getElementById('keypairimpslotid');
+        let objectid = document.getElementById('keyPairimportIDSelect');
+        let keytype = document.getElementById('importPrivateKeyType');
+        let logintype = document.getElementById('importPrivateKeyloginTypeSelect');
+        let key = document.getElementById('privateKeyImport');
+        let keypass = document.getElementById('privateKeyPassword');
+
+        postRequest('/api/pkcs11/importkey', {
+            label: label.value,
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.options[objectid.selectedIndex].value,
+            keytype: keytype.options[keytype.selectedIndex].value,
+            logintype: logintype.options[logintype.selectedIndex].value,
+            key: key.value,
+            keypass: keypass.value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+
     function deleteObject() {
         let type = document.getElementById('deletetype');
         let objectid = document.getElementById('deleteobjectid');
@@ -379,7 +413,7 @@
                         <div class="form-group">
                             <label for="keyPairInputLabel">Label</label>
                             <input type="text" class="form-control" id="keyPairInputLabel" name="keyPairInputLabel" aria-describedby="keyPairInputLabelHelp" placeholder="SoftHSM2 Label Name">
-                            <small id="keyPairInputLabelHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
+                            <small id="keyPairInputLabelHelp" class="form-text text-muted">Enter a friendly name for your private key</small>
                         </div>
                         <div class="form-group">
                             <label for="keyPairIDSelect">Slot Object ID</label>
@@ -446,13 +480,80 @@
                         </div>
                         <div class="form-group">
                             <label for="deleteObjectInputPin">PIN</label>
-                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinnHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
                             <small id="deleteObjectInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
                         </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <input type="submit" class="btn btn-primary" value="Delete Object" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="importPrivateKeyModal" tabindex="-1" role="dialog" aria-labelledby="importPrivateKeyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importPrivateKeyModalLabel">Import Private Key</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="importPrivateKey(); return false;">
+                <input type="hidden" value="" name="keypairimpslotid" id="keypairimpslotid">
+                <input type="hidden" value="" name="keypairimpmodule" id="keypairimpmodule">
+                <input type="hidden" value="" name="keypairimpserial" id="keypairimpserial">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="keyPairImportInputLabel">Label</label>
+                        <input type="text" class="form-control" id="keyPairImportInputLabel" name="keyPairImportInputLabel" aria-describedby="keyPairImportInputLabelHelp" placeholder="SoftHSM2 Label Name">
+                        <small id="keyPairImportInputLabelHelp" class="form-text text-muted">Enter a friendly name for your private key</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="privateKeyImport">Paste ECC or RSA Private Key</label>
+                        <textarea class="form-control" id="privateKeyImport" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyType">Private Key Type</label>
+                        <select class="form-control" id="importPrivateKeyType" name="importPrivateKeyType">
+                            <option value="rsa">RSA</option>
+                            <option value="ec">ECC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="privateKeyPassword">Encrypted Private Key Password (Optional)</label>
+                        <input type="password" class="form-control" id="privateKeyPassword" name="privateKeyPassword" aria-describedby="privateKeyPasswordHelp" value="" placeholder="">
+                        <small id="privateKeyPasswordHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="keyPairimportIDSelect">Slot Object ID</label>
+                        <select class="form-control" id="keyPairimportIDSelect" name="keyPairimportIDSelect">
+                            <option>00</option>
+                            <option>01</option>
+                            <option>02</option>
+                            <option>03</option>
+                            <option>04</option>
+                            <option>05</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyloginTypeSelect">Login Type</label>
+                        <select class="form-control" id="importPrivateKeyloginTypeSelect" name="importPrivateKeyloginTypeSelect">
+                            <option>User</option>
+                            <option>Security Officer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyInputPin">PIN</label>
+                        <input type="password" class="form-control" id="importPrivateKeyInputPin" name="importPrivateKeyInputPin" aria-describedby="importPrivateKeyInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                        <small id="importPrivateKeyInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Import Private Key" />
                 </div>
             </form>
             </div>

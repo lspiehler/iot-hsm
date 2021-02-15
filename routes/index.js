@@ -74,6 +74,25 @@ router.post('/api/pkcs11/generatekey', function(req, res, next) {
 	});
 });
 
+router.post('/api/pkcs11/importkey', function(req, res, next) {
+	console.log(req.body);
+	slotlib.importPrivateKey(req.body, function(err, resp) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: resp,
+				data: req.body
+			}));
+		}
+	});
+});
+
 router.post('/api/softhsm2/create', function(req, res, next) {
 	//console.log(req.body);
 	if(req.body.label == '' || req.body.label == false || req.body.label == null) {
