@@ -188,11 +188,16 @@
                                 let objectid = slotobjects[j];
                                 let module = slots[i].modulePath;
                                 let slotid = slots[i].hexid;
-                                console.log('Type: ' + type);
-                                console.log('Object Id: ' + objectid);
-                                console.log('Module Path: ' + module);
-                                console.log('Slot Id: ' + slotid);
-                                deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
+                                document.getElementById('deletetype').value = type;
+                                document.getElementById('deleteobjectid').value = objectid;
+                                document.getElementById('deletemodule').value = module;
+                                document.getElementById('deleteslotid').value = slotid;
+                                //console.log('Type: ' + type);
+                                //console.log('Object Id: ' + objectid);
+                                //console.log('Module Path: ' + module);
+                                //console.log('Slot Id: ' + slotid);
+                                //deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
+                                $('#deleteObjectModal').modal('show');
                             });
                             cell1.appendChild(inputdelete);
 
@@ -234,24 +239,26 @@
         }
     }
 
-    function deleteObject(params) {
-        var r = confirm("Are you sure you want to delete the \"" + params.type + "\" with ID " + params.objectid + " on slot " + params.slotid + " with module " + params.module + "?");
-        if (r == true) {
-            //let prompt = prompt('Enter the SO PIN');
-            let request = params;
-            params.sopin = '010203040506070801020304050607080102030405012345';
-            postRequest('/api/pkcs11/delete', request, function(err, resp) {
-                if(err) {
-                    alert(resp.message);
-                    //console.log(response);
-                } else {
-                    //console.log(resp);
-                    location.reload();
-                }
-            });
-        } else {
-            txt = "You pressed Cancel!";
-        }
+    function deleteObject() {
+        let type = document.getElementById('deletetype');
+        let objectid = document.getElementById('deleteobjectid');
+        let module = document.getElementById('deletemodule');
+        let slotid = document.getElementById('deleteslotid');
+        let logintype = document.getElementById('deleteObjectloginTypeSelect');
+        let pin = document.getElementById('deleteObjectInputPin');
+        //console.log(pin.value);
+        let request = {type: type.value, objectid: objectid.value, module: module.value, slotid: slotid.value, logintype: logintype.options[logintype.selectedIndex].value, pin: pin.value};
+        //console.log(request);
+        //return false;
+        postRequest('/api/pkcs11/delete', request, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                //console.log(resp);
+                location.reload();
+            }
+        });
     }
 
     function deleteSoftHSM2Slot(params) {
@@ -395,7 +402,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="loginTypeSelect">Private Key</label>
+                            <label for="loginTypeSelect">Login Type</label>
                             <select class="form-control" id="loginTypeSelect" name="loginTypeSelect">
                                 <option>User</option>
                                 <option>Security Officer</option>
@@ -410,6 +417,42 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                     <input type="submit" class="btn btn-primary" value="Generate Key Pair" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="deleteObjectModal" tabindex="-1" role="dialog" aria-labelledby="deleteObjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteObjectModalLabel">Delete Object</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="deleteObject(); return false;">
+                <input type="hidden" value="" name="deletetype" id="deletetype">
+                <input type="hidden" value="" name="deleteobjectid" id="deleteobjectid">
+                <input type="hidden" value="" name="deletemodule" id="deletemodule">
+                <input type="hidden" value="" name="deleteslotid" id="deleteslotid">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label for="deleteObjectloginTypeSelect">Login Type</label>
+                            <select class="form-control" id="deleteObjectloginTypeSelect" name="deleteObjectloginTypeSelect">
+                                <option>User</option>
+                                <option>Security Officer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="deleteObjectInputPin">PIN</label>
+                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinnHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                            <small id="deleteObjectInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Delete Object" />
                 </div>
             </form>
             </div>
