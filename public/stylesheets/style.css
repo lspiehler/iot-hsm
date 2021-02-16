@@ -12,6 +12,11 @@ a {
   white-space: pre-wrap;
 }
 
+textarea {
+  font-family: monospace !important;
+  white-space: pre-wrap;
+}
+
 input[type="button"] {
   margin-right: 5px;
 }
