@@ -13,7 +13,7 @@ slotlib.getSlots(false, function(err, slots) {
 		console.log('Error getting slots:')
 		console.log(err)
 	} else {
-		console.log(slots);
+		//console.log(slots);
 		console.log('Slots initialized...');
 	}
 });

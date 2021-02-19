@@ -8,7 +8,7 @@ const apiResponse = require('../api/apiResponse');
 /* GET home page. */
 router.get('/', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
-		console.log(slots);
+		//console.log(slots);
 		res.render('index', { title: 'Express', slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
@@ -56,7 +56,7 @@ router.post('/api/softhsm2/delete', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/generatekey', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	slotlib.generateKeyPair(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -75,7 +75,7 @@ router.post('/api/pkcs11/generatekey', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/generateselfsigned', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	slotlib.generateSelfSigned(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -94,7 +94,7 @@ router.post('/api/pkcs11/generateselfsigned', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/importkey', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	slotlib.importPrivateKey(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -113,7 +113,7 @@ router.post('/api/pkcs11/importkey', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/importcertificate', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	slotlib.importCertificate(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -151,7 +151,7 @@ router.post('/api/pkcs11/generatecsr', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/signcsr', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	//res.json({});
 	slotlib.signCSR(req.body, function(err, resp) {
 		if(err) {
