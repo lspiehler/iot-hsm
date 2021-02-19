@@ -4,279 +4,287 @@
 </script>
 <script>
     window.onload = function() {
-        for(let i = 0; i <= slots.length - 1; i++) {
-            if(slots[i].hasOwnProperty('token state') && slots[i]['token state']=='uninitialized') {
-                //skip
-            } else {
-                let table = document.createElement('table');
-                table.style.maxWidth = '800px';
-                table.style.width = '100%';
-                table.style.marginTop = '10px';
-                table.style.marginBottom = '10px';
-                table.border = 1;
-                document.body.appendChild(table);
-                let slotprops = Object.keys(slots[i]);
-                let slotobjects = Object.keys(slots[i].objects);
-                for(let j = 0; j <= slotprops.length - 1; j++) {
-                    let row = table.insertRow(table.rows.length);
-                    let cell0 = row.insertCell(0);
-                    cell0.innerText = slotprops[j];
-                    let cell1 = row.insertCell(1);
-                    if(slotprops[j]!='objects') {
-                        cell1.innerText = slots[i][slotprops[j]];
-                    } else {
-                        let table = document.createElement('table');
-                        table.id = 'table' + slots[i]['serial num'];
-                        table.border = 0;
-                        table.style.width = '100%';
-                        if(slotobjects.length >= 1) {
-                            cell1.appendChild(table);
+        if(slots.state == 'initializing') {
+            document.write('Initializing slots');
+        } else {
+            for(let i = 0; i <= slots.slots.length - 1; i++) {
+                if(slots.slots[i].hasOwnProperty('token state') && slots.slots[i]['token state']=='uninitialized') {
+                    //skip
+                } else {
+                    let table = document.createElement('table');
+                    table.style.maxWidth = '800px';
+                    table.style.width = '100%';
+                    table.style.marginTop = '10px';
+                    table.style.marginBottom = '10px';
+                    table.border = 1;
+                    document.body.appendChild(table);
+                    let slotprops = Object.keys(slots.slots[i]);
+                    let slotobjects = Object.keys(slots.slots[i].objects);
+                    for(let j = 0; j <= slotprops.length - 1; j++) {
+                        let row = table.insertRow(table.rows.length);
+                        let cell0 = row.insertCell(0);
+                        cell0.innerText = slotprops[j];
+                        let cell1 = row.insertCell(1);
+                        if(slotprops[j]!='objects') {
+                            cell1.innerText = slots.slots[i][slotprops[j]];
                         } else {
-                            cell1.innerText = 'NULL';
+                            let table = document.createElement('table');
+                            table.id = 'table' + slots.slots[i]['serial num'];
+                            table.border = 0;
+                            table.style.width = '100%';
+                            if(slotobjects.length >= 1) {
+                                cell1.appendChild(table);
+                            } else {
+                                cell1.innerText = 'NULL';
+                            }
                         }
                     }
-                }
-                //create slot options
-                let row = table.insertRow(table.rows.length - 1);
-                let cell0 = row.insertCell(0);
-                cell0.innerText = 'Options';
-                let cell1 = row.insertCell(1);
-                //create slot options for softhsm
-                if(slots[i]['token manufacturer']=='SoftHSM project') {
-                    let input = document.createElement('input');
-                    input.type = 'button';
-                    input.value = 'Delete SoftHSM2 Slot';
-                    input.addEventListener('click', function(e) {
-                        let serial = slots[i]['serial num'];
-                        deleteSoftHSM2Slot({serial: serial});
+                    //create slot options
+                    let row = table.insertRow(table.rows.length - 1);
+                    let cell0 = row.insertCell(0);
+                    cell0.innerText = 'Options';
+                    let cell1 = row.insertCell(1);
+                    //create slot options for softhsm
+                    if(slots.slots[i]['token manufacturer']=='SoftHSM project') {
+                        let input = document.createElement('input');
+                        input.type = 'button';
+                        input.value = 'Delete SoftHSM2 Slot';
+                        input.addEventListener('click', function(e) {
+                            let serial = slots.slots[i]['serial num'];
+                            deleteSoftHSM2Slot({serial: serial});
+                        });
+                        cell1.appendChild(input);
+                    }
+
+                    let keypairgeninput = document.createElement('input');
+                    keypairgeninput.type = 'button';
+                    keypairgeninput.value = 'Generate Key Pair';
+                    keypairgeninput.addEventListener('click', function(e) {
+                        let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        let serial = slots.slots[i]['serial num'];
+                        console.log(serial);
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        document.getElementById('keypairgenserial').value = serial;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');
                     });
-                    cell1.appendChild(input);
-                }
+                    cell1.appendChild(keypairgeninput);
 
-                let keypairgeninput = document.createElement('input');
-                keypairgeninput.type = 'button';
-                keypairgeninput.value = 'Generate Key Pair';
-                keypairgeninput.addEventListener('click', function(e) {
-                    let module = slots[i].modulePath;
-                    let slotid = slots[i].hexid;
-                    let serial = slots[i]['serial num'];
-                    console.log(serial);
-                    document.getElementById('keypairgenmodule').value = module;
-                    document.getElementById('keypairgenslotid').value = slotid;
-                    document.getElementById('keypairgenserial').value = serial;
-                    //generateKeyPair({module: module, slotid: slotid});
-                    $('#generateKeyPairModal').modal('show');
-                });
-                cell1.appendChild(keypairgeninput);
+                    let keypairimportinput = document.createElement('input');
+                    keypairimportinput.type = 'button';
+                    keypairimportinput.value = 'Import Private Key';
+                    keypairimportinput.addEventListener('click', function(e) {
+                        let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        let serial = slots.slots[i]['serial num'];
+                        console.log(serial);
+                        document.getElementById('keypairimpmodule').value = module;
+                        document.getElementById('keypairimpslotid').value = slotid;
+                        document.getElementById('keypairimpserial').value = serial;
+                        $('#importPrivateKeyModal').modal('show');
+                    });
+                    cell1.appendChild(keypairimportinput);
 
-                let keypairimportinput = document.createElement('input');
-                keypairimportinput.type = 'button';
-                keypairimportinput.value = 'Import Private Key';
-                keypairimportinput.addEventListener('click', function(e) {
-                    let module = slots[i].modulePath;
-                    let slotid = slots[i].hexid;
-                    let serial = slots[i]['serial num'];
-                    console.log(serial);
-                    document.getElementById('keypairimpmodule').value = module;
-                    document.getElementById('keypairimpslotid').value = slotid;
-                    document.getElementById('keypairimpserial').value = serial;
-                    $('#importPrivateKeyModal').modal('show');
-                });
-                cell1.appendChild(keypairimportinput);
+                    let userpininput = document.createElement('input');
+                    userpininput.type = 'button';
+                    userpininput.value = 'Change User PIN';
+                    userpininput.addEventListener('click', function(e) {
+                        /*let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');*/
+                    });
+                    cell1.appendChild(userpininput);
 
-                let userpininput = document.createElement('input');
-                userpininput.type = 'button';
-                userpininput.value = 'Change User PIN';
-                userpininput.addEventListener('click', function(e) {
-                    /*let module = slots[i].modulePath;
-                    let slotid = slots[i].hexid;
-                    document.getElementById('keypairgenmodule').value = module;
-                    document.getElementById('keypairgenslotid').value = slotid;
-                    //generateKeyPair({module: module, slotid: slotid});
-                    $('#generateKeyPairModal').modal('show');*/
-                });
-                cell1.appendChild(userpininput);
+                    let sopininput = document.createElement('input');
+                    sopininput.type = 'button';
+                    sopininput.value = 'Change SO PIN';
+                    sopininput.addEventListener('click', function(e) {
+                        /*let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');*/
+                    });
+                    cell1.appendChild(sopininput);
 
-                let sopininput = document.createElement('input');
-                sopininput.type = 'button';
-                sopininput.value = 'Change SO PIN';
-                sopininput.addEventListener('click', function(e) {
-                    /*let module = slots[i].modulePath;
-                    let slotid = slots[i].hexid;
-                    document.getElementById('keypairgenmodule').value = module;
-                    document.getElementById('keypairgenslotid').value = slotid;
-                    //generateKeyPair({module: module, slotid: slotid});
-                    $('#generateKeyPairModal').modal('show');*/
-                });
-                cell1.appendChild(sopininput);
-
-                for(let j = 0; j <= slotobjects.length - 1; j++) {
-                    let table = document.getElementById('table' + slots[i]['serial num']);
-                    let tablerow0 = table.insertRow(table.rows.length);
-                    let tablerow0cell0 = tablerow0.insertCell(0);
-                    //orow0cell0.id = 'objecttable' + slots[i]['serial num'];
-                    //orow0cell0.innerText = slotobjects[j];
-                    //let orow1 = table.insertRow(table.rows.length);
-                    //let orow1cell0 = orow1.insertCell(0);
-                    let objecttable = document.createElement('table');
-                    objecttable.id = 'objecttable' + slots[i]['serial num'] + slotobjects[j];
-                    objecttable.border = 1;
-                    objecttable.style.width = '100%';
-                    tablerow0cell0.appendChild(objecttable);
-                    let objecttablerow0 = objecttable.insertRow(objecttable.rows.length);
-                    let objecttablerow0cell0 = objecttablerow0.insertCell(0);
-                    objecttablerow0cell0.style.textAlign = 'center';
-                    objecttablerow0cell0.innerText = 'Object ' + slotobjects[j];
-                    let types = Object.keys(slots[i].objects[slotobjects[j]]);
-                    //console.log(slots[i].objects[slotobjects[j]].length);
-                    for(let k = 0; k <= types.length - 1; k++) {
-                        //console.log(types[k]);
-                        //let table = document.getElementById('objecttable' + slots[i]['serial num'] + slotobjects[j]);
-                        //let orow0 = table.insertRow(table.rows.length);
-                        //let orow0cell0 = orow0.insertCell(0);
-                        //let objecttable = document.createElement('table');
-                        //objecttable.id = 'objecttable' + slots[i]['serial num'] + slotobjects[j] + k;
-                        //objecttable.border = 1;
-                        //objecttable.style.width = '100%';
-                        //orow0cell0.appendChild(objecttable);
-                        //console.log('objecttable' + slots[i]['serial num'] + slotobjects[j] + k);
-                        //orow0cell0.innerText = types[k];
-                        for(let l = 0; l <= slots[i].objects[slotobjects[j]][types[k]].length - 1; l++) {
-                            let table0 = document.getElementById('objecttable' + slots[i]['serial num'] + slotobjects[j]);
-                            let table0row0 = table0.insertRow(table0.rows.length);
-                            let table0row0cell0 = table0row0.insertCell(0);
-                            let objecttabletype = document.createElement('table');
-                            objecttabletype.style.width = '100%';
-                            objecttabletype.id = 'objecttabletype' + slots[i]['serial num'] + slotobjects[j] + k;
-                            objecttabletype.border = 1;
-                            //table0row0cell0.innerText = types[k];
-                            table0row0cell0.appendChild(objecttabletype);
-                            let objecttabletyperow0 = objecttabletype.insertRow(objecttabletype.rows.length);
-                            let objecttabletyperow0cell0 = objecttabletyperow0.insertCell(0);
-                            objecttabletyperow0cell0.innerText = types[k] + ' (' + slotobjects[j] + ')';
-                            objecttabletyperow0cell0.style.textAlign = 'center';
-                            let objecttabletyperow1 = objecttabletype.insertRow(objecttabletype.rows.length);
-                            let objecttabletyperow1cell0 = objecttabletyperow1.insertCell(0);
-                            let objecttableitem = document.createElement('table');
-                            objecttableitem.style.width = '100%';
-                            objecttableitem.border = 1;
-                            objecttableitem.id = 'objecttableitem' + slots[i]['serial num'] + slotobjects[j] + k + l;
-                            objecttabletyperow1cell0.appendChild(objecttableitem);
-                            let objectprops = Object.keys(slots[i].objects[slotobjects[j]][types[k]][l]);
-                            for(let m = 0; m <= objectprops.length - 1; m++) {
-                                //console.log(slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]])
-                                //console.log('objecttable' + slots[i]['serial num'] + slotobjects[j] + k);
-                                let table = document.getElementById('objecttableitem' + slots[i]['serial num'] + slotobjects[j] + k + l);
+                    for(let j = 0; j <= slotobjects.length - 1; j++) {
+                        let table = document.getElementById('table' + slots.slots[i]['serial num']);
+                        let tablerow0 = table.insertRow(table.rows.length);
+                        let tablerow0cell0 = tablerow0.insertCell(0);
+                        //orow0cell0.id = 'objecttable' + slots.slots[i]['serial num'];
+                        //orow0cell0.innerText = slotobjects[j];
+                        //let orow1 = table.insertRow(table.rows.length);
+                        //let orow1cell0 = orow1.insertCell(0);
+                        let objecttable = document.createElement('table');
+                        objecttable.id = 'objecttable' + slots.slots[i]['serial num'] + slotobjects[j];
+                        objecttable.border = 1;
+                        objecttable.style.width = '100%';
+                        tablerow0cell0.appendChild(objecttable);
+                        let objecttablerow0 = objecttable.insertRow(objecttable.rows.length);
+                        let objecttablerow0cell0 = objecttablerow0.insertCell(0);
+                        objecttablerow0cell0.style.textAlign = 'center';
+                        objecttablerow0cell0.innerText = 'Object ' + slotobjects[j];
+                        let types = Object.keys(slots.slots[i].objects[slotobjects[j]]);
+                        //console.log(slots.slots[i].objects[slotobjects[j]].length);
+                        for(let k = 0; k <= types.length - 1; k++) {
+                            //console.log(types[k]);
+                            //let table = document.getElementById('objecttable' + slots.slots[i]['serial num'] + slotobjects[j]);
+                            //let orow0 = table.insertRow(table.rows.length);
+                            //let orow0cell0 = orow0.insertCell(0);
+                            //let objecttable = document.createElement('table');
+                            //objecttable.id = 'objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k;
+                            //objecttable.border = 1;
+                            //objecttable.style.width = '100%';
+                            //orow0cell0.appendChild(objecttable);
+                            //console.log('objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k);
+                            //orow0cell0.innerText = types[k];
+                            for(let l = 0; l <= slots.slots[i].objects[slotobjects[j]][types[k]].length - 1; l++) {
+                                let table0 = document.getElementById('objecttable' + slots.slots[i]['serial num'] + slotobjects[j]);
+                                let table0row0 = table0.insertRow(table0.rows.length);
+                                let table0row0cell0 = table0row0.insertCell(0);
+                                let objecttabletype = document.createElement('table');
+                                objecttabletype.style.width = '100%';
+                                objecttabletype.id = 'objecttabletype' + slots.slots[i]['serial num'] + slotobjects[j] + k;
+                                objecttabletype.border = 1;
+                                //table0row0cell0.innerText = types[k];
+                                table0row0cell0.appendChild(objecttabletype);
+                                let objecttabletyperow0 = objecttabletype.insertRow(objecttabletype.rows.length);
+                                let objecttabletyperow0cell0 = objecttabletyperow0.insertCell(0);
+                                objecttabletyperow0cell0.innerText = types[k] + ' (' + slotobjects[j] + ')';
+                                objecttabletyperow0cell0.style.textAlign = 'center';
+                                let objecttabletyperow1 = objecttabletype.insertRow(objecttabletype.rows.length);
+                                let objecttabletyperow1cell0 = objecttabletyperow1.insertCell(0);
+                                let objecttableitem = document.createElement('table');
+                                objecttableitem.style.width = '100%';
+                                objecttableitem.border = 1;
+                                objecttableitem.id = 'objecttableitem' + slots.slots[i]['serial num'] + slotobjects[j] + k + l;
+                                objecttabletyperow1cell0.appendChild(objecttableitem);
+                                let objectprops = Object.keys(slots.slots[i].objects[slotobjects[j]][types[k]][l]);
+                                for(let m = 0; m <= objectprops.length - 1; m++) {
+                                    //console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]])
+                                    //console.log('objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k);
+                                    let table = document.getElementById('objecttableitem' + slots.slots[i]['serial num'] + slotobjects[j] + k + l);
+                                    //console.log(table);
+                                    let row0 = table.insertRow(table.rows.length);
+                                    let cell0 = row0.insertCell(0);
+                                    cell0.innerText = objectprops[m];
+                                    let cell1 = row0.insertCell(1);
+                                    cell1.className = objectprops[m];
+                                    if(objectprops[m]=='certinfo') {
+                                        cell1.innerHTML = '<pre>' + JSON.stringify(slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]], null, '\t') + '</pre>';
+                                    } else {
+                                        cell1.innerText = slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]];
+                                    }
+                                }
                                 //console.log(table);
-                                let row0 = table.insertRow(table.rows.length);
+                                let row0 = objecttableitem.insertRow(objecttableitem.rows.length);
                                 let cell0 = row0.insertCell(0);
-                                cell0.innerText = objectprops[m];
+                                cell0.innerText = 'Options';
                                 let cell1 = row0.insertCell(1);
-                                cell1.className = objectprops[m];
-                                cell1.innerText = slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]];
-                            }
-                            //console.log(table);
-                            let row0 = objecttableitem.insertRow(objecttableitem.rows.length);
-                            let cell0 = row0.insertCell(0);
-                            cell0.innerText = 'Options';
-                            let cell1 = row0.insertCell(1);
-                            let inputdelete = document.createElement('input');
-                            inputdelete.type = 'button';
-                            inputdelete.value = 'Delete';
-                            console.log(slots[i].objects[slotobjects[j]][types[k]][l]['label']);
-                            inputdelete.addEventListener('click', function(e) {
-                                let type = types[k];
-                                let objectid = slotobjects[j];
-                                let label = slots[i].objects[slotobjects[j]][types[k]][l]['label'];
-                                let module = slots[i].modulePath;
-                                let slotid = slots[i].hexid;
-                                document.getElementById('deletelabel').value = label;
-                                document.getElementById('deletetype').value = type;
-                                document.getElementById('deleteobjectid').value = objectid;
-                                document.getElementById('deletemodule').value = module;
-                                document.getElementById('deleteslotid').value = slotid;
-                                //console.log('Type: ' + type);
-                                //console.log('Object Id: ' + objectid);
-                                //console.log('Module Path: ' + module);
-                                //console.log('Slot Id: ' + slotid);
-                                //deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
-                                $('#deleteObjectModal').modal('show');
-                            });
-                            cell1.appendChild(inputdelete);
-
-                            if(types[k]=='Certificate Object') {
-                                let generatecsrinput = document.createElement('input');
-                                generatecsrinput.type = 'button';
-                                generatecsrinput.value = 'Sign Certificate';
-                                generatecsrinput.addEventListener('click', function(e) {
+                                let inputdelete = document.createElement('input');
+                                inputdelete.type = 'button';
+                                inputdelete.value = 'Delete';
+                                console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l]['label']);
+                                inputdelete.addEventListener('click', function(e) {
                                     let type = types[k];
                                     let objectid = slotobjects[j];
-                                    let module = slots[i].modulePath;
-                                    let slotid = slots[i].hexid;
-                                    let serial = slots[i]['serial num'];
-                                    document.getElementById('signcerttype').value = type;
-                                    document.getElementById('signcertobjectid').value = objectid;
-                                    document.getElementById('signcertmodule').value = module;
-                                    document.getElementById('signcertslotid').value = slotid;
-                                    document.getElementById('signcertserial').value = serial;
-                                    $('#signCertificateModal').modal('show');
+                                    let label = slots.slots[i].objects[slotobjects[j]][types[k]][l]['label'];
+                                    let module = slots.slots[i].modulePath;
+                                    let slotid = slots.slots[i].hexid;
+                                    document.getElementById('deletelabel').value = label;
+                                    document.getElementById('deletetype').value = type;
+                                    document.getElementById('deleteobjectid').value = objectid;
+                                    document.getElementById('deletemodule').value = module;
+                                    document.getElementById('deleteslotid').value = slotid;
+                                    //console.log('Type: ' + type);
+                                    //console.log('Object Id: ' + objectid);
+                                    //console.log('Module Path: ' + module);
+                                    //console.log('Slot Id: ' + slotid);
+                                    //deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
+                                    $('#deleteObjectModal').modal('show');
                                 });
-                                cell1.appendChild(generatecsrinput);
-                            }
+                                cell1.appendChild(inputdelete);
 
-                            if(types[k]=='Public Key Object') {
-                                let generatecsrinput = document.createElement('input');
-                                generatecsrinput.type = 'button';
-                                generatecsrinput.value = 'Generate CSR';
-                                generatecsrinput.addEventListener('click', function(e) {
-                                    let type = types[k];
-                                    let objectid = slotobjects[j];
-                                    let module = slots[i].modulePath;
-                                    let slotid = slots[i].hexid;
-                                    let serial = slots[i]['serial num'];
-                                    document.getElementById('csrtype').value = type;
-                                    document.getElementById('csrobjectid').value = objectid;
-                                    document.getElementById('csrmodule').value = module;
-                                    document.getElementById('csrslotid').value = slotid;
-                                    document.getElementById('csrserial').value = serial;
-                                    $('#generateCSRModal').modal('show');
-                                });
-                                cell1.appendChild(generatecsrinput);
+                                if(types[k]=='Certificate Object') {
+                                    let generatecsrinput = document.createElement('input');
+                                    generatecsrinput.type = 'button';
+                                    generatecsrinput.value = 'Sign Certificate';
+                                    generatecsrinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('signcerttype').value = type;
+                                        document.getElementById('signcertobjectid').value = objectid;
+                                        document.getElementById('signcertmodule').value = module;
+                                        document.getElementById('signcertslotid').value = slotid;
+                                        document.getElementById('signcertserial').value = serial;
+                                        $('#signCertificateModal').modal('show');
+                                    });
+                                    cell1.appendChild(generatecsrinput);
+                                }
 
-                                let certimportinput = document.createElement('input');
-                                certimportinput.type = 'button';
-                                certimportinput.value = 'Import Certificate';
-                                certimportinput.addEventListener('click', function(e) {
-                                    let module = slots[i].modulePath;
-                                    let slotid = slots[i].hexid;
-                                    let objectid = slotobjects[j];
-                                    let serial = slots[i]['serial num'];
-                                    console.log(serial);
-                                    document.getElementById('certimpmodule').value = module;
-                                    document.getElementById('certimpslotid').value = slotid;
-                                    document.getElementById('certimpserial').value = serial;
-                                    document.getElementById('certimpobjectid').value = objectid;
-                                    $('#importCertificateModal').modal('show');
-                                });
-                                cell1.appendChild(certimportinput);
+                                if(types[k]=='Public Key Object') {
+                                    let generatecsrinput = document.createElement('input');
+                                    generatecsrinput.type = 'button';
+                                    generatecsrinput.value = 'Generate CSR';
+                                    generatecsrinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('csrtype').value = type;
+                                        document.getElementById('csrobjectid').value = objectid;
+                                        document.getElementById('csrmodule').value = module;
+                                        document.getElementById('csrslotid').value = slotid;
+                                        document.getElementById('csrserial').value = serial;
+                                        $('#generateCSRModal').modal('show');
+                                    });
+                                    cell1.appendChild(generatecsrinput);
 
-                                let selfsignedinput = document.createElement('input');
-                                selfsignedinput.type = 'button';
-                                selfsignedinput.value = 'Generate Self Signed Certificate';
-                                selfsignedinput.addEventListener('click', function(e) {
-                                    let type = types[k];
-                                    let objectid = slotobjects[j];
-                                    let module = slots[i].modulePath;
-                                    let slotid = slots[i].hexid;
-                                    let serial = slots[i]['serial num'];
-                                    document.getElementById('selfsigntype').value = type;
-                                    document.getElementById('selfsignobjectid').value = objectid;
-                                    document.getElementById('selfsignmodule').value = module;
-                                    document.getElementById('selfsignslotid').value = slotid;
-                                    document.getElementById('selfsignserial').value = serial;
-                                    $('#generateSelfSignedModal').modal('show');
-                                });
-                                cell1.appendChild(selfsignedinput);
+                                    let certimportinput = document.createElement('input');
+                                    certimportinput.type = 'button';
+                                    certimportinput.value = 'Import Certificate';
+                                    certimportinput.addEventListener('click', function(e) {
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let objectid = slotobjects[j];
+                                        let serial = slots.slots[i]['serial num'];
+                                        console.log(serial);
+                                        document.getElementById('certimpmodule').value = module;
+                                        document.getElementById('certimpslotid').value = slotid;
+                                        document.getElementById('certimpserial').value = serial;
+                                        document.getElementById('certimpobjectid').value = objectid;
+                                        $('#importCertificateModal').modal('show');
+                                    });
+                                    cell1.appendChild(certimportinput);
+
+                                    let selfsignedinput = document.createElement('input');
+                                    selfsignedinput.type = 'button';
+                                    selfsignedinput.value = 'Generate Self Signed Certificate';
+                                    selfsignedinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('selfsigntype').value = type;
+                                        document.getElementById('selfsignobjectid').value = objectid;
+                                        document.getElementById('selfsignmodule').value = module;
+                                        document.getElementById('selfsignslotid').value = slotid;
+                                        document.getElementById('selfsignserial').value = serial;
+                                        $('#generateSelfSignedModal').modal('show');
+                                    });
+                                    cell1.appendChild(selfsignedinput);
+                                }
                             }
                         }
                     }
