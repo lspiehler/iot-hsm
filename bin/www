@@ -3,6 +3,7 @@
 var openssl = require('../lib/openssl');
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
+var IoTHSM = require('../lib/IoTHSM');
 
 var server;
 var debug = require('debug')('pkcs11iot:server');
@@ -17,6 +18,13 @@ slotlib.getSlots(false, function(err, slots) {
 		console.log('Slots initialized...');
 	}
 });
+
+slotlib.event.on('changed', function(cachedslots) {
+    //console.log('here');
+    //console.log(cachedslots.slots);
+    IoTHSM.connectSlots(cachedslots.slots, function(err) {});
+});
+
 	/**
 	 * Module dependencies.
 	 */
