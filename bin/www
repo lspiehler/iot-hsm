@@ -30,7 +30,7 @@ slotlib.event.on('changed', function(cachedslots) {
 	 */
 
 	var app = require('../lib/express');
-	var pubnub = require('../lib/pubnub');
+	//var pubnub = require('../lib/pubnub');
 	var http = require('http');
 
 	/**
