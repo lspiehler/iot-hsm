@@ -16,3 +16,8 @@ git clone https://github.com/lspiehler/iot-hsm.git
 cd iot-hsm
 npm install
 ```
+
+## Docker Command
+```
+docker run -it -d --restart=always --name iot-hsm -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
+```
