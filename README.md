@@ -10,6 +10,11 @@ apt update
 apt -y install openssl opensc libengine-pkcs11-openssl ykcs11 softhsm2 nodejs
 ```
 
+## Set timezone to UTC
+```
+timedatectl set-timezone UTC
+```
+
 ## Install IoT-HSM
 ```
 git clone https://github.com/lspiehler/iot-hsm.git
