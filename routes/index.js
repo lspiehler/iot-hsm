@@ -9,7 +9,7 @@ const apiResponse = require('../api/apiResponse');
 router.get('/', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
-		res.render('index', { title: 'Express', slots: slots, slotstring: JSON.stringify(slots) });
+		res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: 'Express', slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
 

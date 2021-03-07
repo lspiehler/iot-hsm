@@ -567,12 +567,12 @@
                         </div>
                         <div class="form-group">
                             <label for="createSoftHSM2SlotInputSOPin">SO PIN</label>
-                            <input type="password" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="010203040506070801020304050607080102030405060708">
-                            <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN <br />Default: 010203040506070801020304050607080102030405060708</small>
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="{{sopin}}">
+                            <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN</small>
                         </div>
                         <div class="form-group">
                             <label for="createSoftHSM2SlotInputPin">User PIN</label>
-                            <input type="password" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" aria-describedby="createSoftHSM2SlotInputPinHelp" value="123456" placeholder="">
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" aria-describedby="createSoftHSM2SlotInputPinHelp" value="{{userpin}}" placeholder="">
                             <small id="createSoftHSM2SlotInputPinHelp" class="form-text text-muted">Enter the user PIN</small>
                         </div>
                 </div>
@@ -636,7 +636,7 @@
                         </div>
                         <div class="form-group">
                             <label for="keyPairInputPin">PIN</label>
-                            <input type="password" class="form-control" id="keyPairInputPin" name="keyPairInputPin" aria-describedby="keyPairInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                            <input type="password" class="form-control" id="keyPairInputPin" name="keyPairInputPin" aria-describedby="keyPairInputPinHelp" value="{{sopin}}" placeholder="">
                             <small id="keyPairInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
                         </div>
                 </div>
@@ -676,7 +676,7 @@
                         </div>
                         <div class="form-group">
                             <label for="deleteObjectInputPin">PIN</label>
-                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinHelp" value="{{sopin}}" placeholder="">
                             <small id="deleteObjectInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
                         </div>
                 </div>
@@ -747,7 +747,7 @@
                     </div>
                     <div class="form-group">
                         <label for="importPrivateKeyInputPin">PIN</label>
-                        <input type="password" class="form-control" id="importPrivateKeyInputPin" name="importPrivateKeyInputPin" aria-describedby="importPrivateKeyInputPinHelp" value="010203040506070801020304050607080102030405060708" placeholder="">
+                        <input type="password" class="form-control" id="importPrivateKeyInputPin" name="importPrivateKeyInputPin" aria-describedby="importPrivateKeyInputPinHelp" value="{{sopin}}" placeholder="">
                         <small id="importPrivateKeyInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
                     </div>
                 </div>
@@ -792,7 +792,7 @@
                     </div>
                     <div class="form-group">
                         <label for="importCertificateInputPin">PIN</label>
-                        <input type="password" class="form-control" id="importCertificateInputPin" name="importCertificateInputPin" aria-describedby="importCertificateInputPinHelp" value="123456" placeholder="">
+                        <input type="password" class="form-control" id="importCertificateInputPin" name="importCertificateInputPin" aria-describedby="importCertificateInputPinHelp" value="{{userpin}}" placeholder="">
                         <small id="importCertificateInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
                     </div>
                 </div>
@@ -858,7 +858,7 @@
                     </div>
                     <div class="form-group">
                         <label for="csrpin">PIN</label>
-                        <input type="password" class="form-control" id="csrpin" name="csrpin" aria-describedby="csrpinHelp" value="123456" placeholder="">
+                        <input type="password" class="form-control" id="csrpin" name="csrpin" aria-describedby="csrpinHelp" value="{{userpin}}" placeholder="">
                         <small id="csrpinHelp" class="form-text text-muted">Enter the user PIN to generate the CSR using the private key</small>
                     </div>
                 </div>
@@ -910,7 +910,7 @@
                     </div>
                     <div class="form-group">
                         <label for="signpin">PIN</label>
-                        <input type="password" class="form-control" id="signpin" name="signpin" aria-describedby="signpinHelp" value="123456" placeholder="">
+                        <input type="password" class="form-control" id="signpin" name="signpin" aria-describedby="signpinHelp" value="{{userpin}}" placeholder="">
                         <small id="signpinHelp" class="form-text text-muted">Enter the user PIN to sign the CSR using the private key</small>
                     </div>
                 </div>
@@ -962,7 +962,7 @@
                     </div>
                     <div class="form-group">
                         <label for="selfsignpin">PIN</label>
-                        <input type="password" class="form-control" id="selfsignpin" name="selfsignpin" aria-describedby="selfsignpinHelp" value="123456" placeholder="">
+                        <input type="password" class="form-control" id="selfsignpin" name="selfsignpin" aria-describedby="selfsignpinHelp" value="{{userpin}}" placeholder="">
                         <small id="selfsignpinHelp" class="form-text text-muted">Enter the user PIN to generate the self-signed certificate using the private key</small>
                     </div>
                 </div>
