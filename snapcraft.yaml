@@ -3,6 +3,7 @@ summary: IoT-HSM allows you to use an HSM like the Yubikey with PKIaas.io.
 description: |
   IoT-HSM allows Yubikeys and SoftHSM2 devices to be managed and serve
   as an "IoT HSM" interface for signing operations on PKIaaS.io.
+confinement: strict
 base: core18
 version: git
 apps:
@@ -15,7 +16,10 @@ apps:
 parts:
   iot-hsm:
     plugin: nodejs
-    node-engine: '14.16.0'
+    node-version: '14.16.0'
+    nodejs-package-manager: npm
+    source: https://97c5a0359627b4ab69ca8421e77816f46c25497c@github.com/lspiehler/iot-hsm.git
+    source-type: git
     stage-packages:
       - openssl
       - opensc
