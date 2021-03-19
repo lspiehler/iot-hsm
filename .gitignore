@@ -3,3 +3,4 @@ test
 .env
 snap
 parts
+*.snap
