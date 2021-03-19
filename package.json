@@ -15,11 +15,9 @@
     "hbs": "~4.0.4",
     "http-errors": "~1.6.3",
     "jquery": "^3.6.0",
-    "madge": "^4.0.2",
     "moment": "^2.29.1",
     "morgan": "~1.9.1",
-    "mqtt": "^4.2.6",
-    "node-openssl-cert": "git+https://github.com/lspiehler/node-openssl-cert.git",
+    "node-openssl-cert": "^0.1.32",
     "pubnub": "^4.29.11",
     "uuid": "^8.3.2",
     "zlib": "^1.0.5"
