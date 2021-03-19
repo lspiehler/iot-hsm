@@ -29,3 +29,10 @@ npm install
 ```
 docker run -it -d --restart=always --name iot-hsm -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
 ```
+
+## Snap Build
+```
+apt install -y snapd
+snap install snapcraft --classic
+snapcraft
+```
