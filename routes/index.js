@@ -4,17 +4,56 @@ var openssl = require('../lib/openssl');
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 const apiResponse = require('../api/apiResponse');
+var title = 'IoT-HSM';
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
-		res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: 'Express', slots: slots, slotstring: JSON.stringify(slots) });
+		if(slots.state == 'initializing') {
+			res.redirect('/initializing');
+		} else {
+			res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/reload', function(req, res, next) {
+	slotlib.getSlots(true, function(err, slots) {
+		res.redirect('/');
+	});
+});
+
+router.get('/initializing', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		if(slots.state == 'initializing') {
+			res.render('initializing', { layout: 'init-layout', userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+		} else {
+			res.redirect('/');
+		}
+	});
+});
+
+router.get('/expert', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		console.log(slots);
+		res.render('expert', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
 
 router.get('/getCert', function(req, res, next) {
 	res.json(config.getCertInfo());
+});
+
+router.get('/wizard/key/:serial', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		//console.log(slots);
+		if(slots.state == 'initializing') {
+			res.redirect('/initializing');
+		} else {
+			res.render('wizard/key', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotstring: JSON.stringify(slots) });
+		}
+	});
 });
 
 router.post('/api/pkcs11/delete', function(req, res, next) {

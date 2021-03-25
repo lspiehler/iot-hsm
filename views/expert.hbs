@@ -1,0 +1,977 @@
+<script>
+    var slots = {{{slotstring}}}
+    console.log(slots);
+</script>
+<script>
+    window.onload = function() {
+        if(slots.state == 'initializing') {
+            document.write('Initializing slots');
+        } else {
+            for(let i = 0; i <= slots.slots.length - 1; i++) {
+                if(slots.slots[i].hasOwnProperty('token state') && slots.slots[i]['token state']=='uninitialized') {
+                    //skip
+                } else {
+                    let table = document.createElement('table');
+                    table.style.maxWidth = '800px';
+                    table.style.width = '100%';
+                    table.style.marginTop = '10px';
+                    table.style.marginBottom = '10px';
+                    table.border = 1;
+                    document.body.appendChild(table);
+                    let slotprops = Object.keys(slots.slots[i]);
+                    let slotobjects = Object.keys(slots.slots[i].objects);
+                    for(let j = 0; j <= slotprops.length - 1; j++) {
+                        let row = table.insertRow(table.rows.length);
+                        let cell0 = row.insertCell(0);
+                        cell0.innerText = slotprops[j];
+                        let cell1 = row.insertCell(1);
+                        if(slotprops[j]!='objects') {
+                            cell1.innerText = slots.slots[i][slotprops[j]];
+                        } else {
+                            let table = document.createElement('table');
+                            table.id = 'table' + slots.slots[i]['serial num'];
+                            table.border = 0;
+                            table.style.width = '100%';
+                            if(slotobjects.length >= 1) {
+                                cell1.appendChild(table);
+                            } else {
+                                cell1.innerText = 'NULL';
+                            }
+                        }
+                    }
+                    //create slot options
+                    let row = table.insertRow(table.rows.length - 1);
+                    let cell0 = row.insertCell(0);
+                    cell0.innerText = 'Options';
+                    let cell1 = row.insertCell(1);
+                    //create slot options for softhsm
+                    if(slots.slots[i]['token manufacturer']=='SoftHSM project') {
+                        let input = document.createElement('input');
+                        input.type = 'button';
+                        input.value = 'Delete SoftHSM2 Slot';
+                        input.addEventListener('click', function(e) {
+                            let serial = slots.slots[i]['serial num'];
+                            deleteSoftHSM2Slot({serial: serial});
+                        });
+                        cell1.appendChild(input);
+                    }
+
+                    let keypairgeninput = document.createElement('input');
+                    keypairgeninput.type = 'button';
+                    keypairgeninput.value = 'Generate Key Pair';
+                    keypairgeninput.addEventListener('click', function(e) {
+                        let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        let serial = slots.slots[i]['serial num'];
+                        console.log(serial);
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        document.getElementById('keypairgenserial').value = serial;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');
+                    });
+                    cell1.appendChild(keypairgeninput);
+
+                    let keypairimportinput = document.createElement('input');
+                    keypairimportinput.type = 'button';
+                    keypairimportinput.value = 'Import Private Key';
+                    keypairimportinput.addEventListener('click', function(e) {
+                        let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        let serial = slots.slots[i]['serial num'];
+                        console.log(serial);
+                        document.getElementById('keypairimpmodule').value = module;
+                        document.getElementById('keypairimpslotid').value = slotid;
+                        document.getElementById('keypairimpserial').value = serial;
+                        $('#importPrivateKeyModal').modal('show');
+                    });
+                    cell1.appendChild(keypairimportinput);
+
+                    let userpininput = document.createElement('input');
+                    userpininput.type = 'button';
+                    userpininput.value = 'Change User PIN';
+                    userpininput.addEventListener('click', function(e) {
+                        /*let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');*/
+                    });
+                    cell1.appendChild(userpininput);
+
+                    let sopininput = document.createElement('input');
+                    sopininput.type = 'button';
+                    sopininput.value = 'Change SO PIN';
+                    sopininput.addEventListener('click', function(e) {
+                        /*let module = slots.slots[i].modulePath;
+                        let slotid = slots.slots[i].hexid;
+                        document.getElementById('keypairgenmodule').value = module;
+                        document.getElementById('keypairgenslotid').value = slotid;
+                        //generateKeyPair({module: module, slotid: slotid});
+                        $('#generateKeyPairModal').modal('show');*/
+                    });
+                    cell1.appendChild(sopininput);
+
+                    for(let j = 0; j <= slotobjects.length - 1; j++) {
+                        let table = document.getElementById('table' + slots.slots[i]['serial num']);
+                        let tablerow0 = table.insertRow(table.rows.length);
+                        let tablerow0cell0 = tablerow0.insertCell(0);
+                        //orow0cell0.id = 'objecttable' + slots.slots[i]['serial num'];
+                        //orow0cell0.innerText = slotobjects[j];
+                        //let orow1 = table.insertRow(table.rows.length);
+                        //let orow1cell0 = orow1.insertCell(0);
+                        let objecttable = document.createElement('table');
+                        objecttable.id = 'objecttable' + slots.slots[i]['serial num'] + slotobjects[j];
+                        objecttable.border = 1;
+                        objecttable.style.width = '100%';
+                        tablerow0cell0.appendChild(objecttable);
+                        let objecttablerow0 = objecttable.insertRow(objecttable.rows.length);
+                        let objecttablerow0cell0 = objecttablerow0.insertCell(0);
+                        objecttablerow0cell0.style.textAlign = 'center';
+                        objecttablerow0cell0.innerText = 'Object ' + slotobjects[j];
+                        let types = Object.keys(slots.slots[i].objects[slotobjects[j]]);
+                        //console.log(slots.slots[i].objects[slotobjects[j]].length);
+                        for(let k = 0; k <= types.length - 1; k++) {
+                            //console.log(types[k]);
+                            //let table = document.getElementById('objecttable' + slots.slots[i]['serial num'] + slotobjects[j]);
+                            //let orow0 = table.insertRow(table.rows.length);
+                            //let orow0cell0 = orow0.insertCell(0);
+                            //let objecttable = document.createElement('table');
+                            //objecttable.id = 'objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k;
+                            //objecttable.border = 1;
+                            //objecttable.style.width = '100%';
+                            //orow0cell0.appendChild(objecttable);
+                            //console.log('objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k);
+                            //orow0cell0.innerText = types[k];
+                            for(let l = 0; l <= slots.slots[i].objects[slotobjects[j]][types[k]].length - 1; l++) {
+                                let table0 = document.getElementById('objecttable' + slots.slots[i]['serial num'] + slotobjects[j]);
+                                let table0row0 = table0.insertRow(table0.rows.length);
+                                let table0row0cell0 = table0row0.insertCell(0);
+                                let objecttabletype = document.createElement('table');
+                                objecttabletype.style.width = '100%';
+                                objecttabletype.id = 'objecttabletype' + slots.slots[i]['serial num'] + slotobjects[j] + k;
+                                objecttabletype.border = 1;
+                                //table0row0cell0.innerText = types[k];
+                                table0row0cell0.appendChild(objecttabletype);
+                                let objecttabletyperow0 = objecttabletype.insertRow(objecttabletype.rows.length);
+                                let objecttabletyperow0cell0 = objecttabletyperow0.insertCell(0);
+                                objecttabletyperow0cell0.innerText = types[k] + ' (' + slotobjects[j] + ')';
+                                objecttabletyperow0cell0.style.textAlign = 'center';
+                                let objecttabletyperow1 = objecttabletype.insertRow(objecttabletype.rows.length);
+                                let objecttabletyperow1cell0 = objecttabletyperow1.insertCell(0);
+                                let objecttableitem = document.createElement('table');
+                                objecttableitem.style.width = '100%';
+                                objecttableitem.border = 1;
+                                objecttableitem.id = 'objecttableitem' + slots.slots[i]['serial num'] + slotobjects[j] + k + l;
+                                objecttabletyperow1cell0.appendChild(objecttableitem);
+                                let objectprops = Object.keys(slots.slots[i].objects[slotobjects[j]][types[k]][l]);
+                                for(let m = 0; m <= objectprops.length - 1; m++) {
+                                    //console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]])
+                                    //console.log('objecttable' + slots.slots[i]['serial num'] + slotobjects[j] + k);
+                                    let table = document.getElementById('objecttableitem' + slots.slots[i]['serial num'] + slotobjects[j] + k + l);
+                                    //console.log(table);
+                                    let row0 = table.insertRow(table.rows.length);
+                                    let cell0 = row0.insertCell(0);
+                                    cell0.innerText = objectprops[m];
+                                    let cell1 = row0.insertCell(1);
+                                    cell1.className = objectprops[m];
+                                    if(objectprops[m]=='certinfo') {
+                                        cell1.innerHTML = '<pre>' + JSON.stringify(slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]], null, '\t') + '</pre>';
+                                    } else {
+                                        cell1.innerText = slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]];
+                                    }
+                                }
+                                //console.log(table);
+                                let row0 = objecttableitem.insertRow(objecttableitem.rows.length);
+                                let cell0 = row0.insertCell(0);
+                                cell0.innerText = 'Options';
+                                let cell1 = row0.insertCell(1);
+                                let inputdelete = document.createElement('input');
+                                inputdelete.type = 'button';
+                                inputdelete.value = 'Delete';
+                                console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l]['label']);
+                                inputdelete.addEventListener('click', function(e) {
+                                    let type = types[k];
+                                    let objectid = slotobjects[j];
+                                    let label = slots.slots[i].objects[slotobjects[j]][types[k]][l]['label'];
+                                    let module = slots.slots[i].modulePath;
+                                    let slotid = slots.slots[i].hexid;
+                                    document.getElementById('deletelabel').value = label;
+                                    document.getElementById('deletetype').value = type;
+                                    document.getElementById('deleteobjectid').value = objectid;
+                                    document.getElementById('deletemodule').value = module;
+                                    document.getElementById('deleteslotid').value = slotid;
+                                    //console.log('Type: ' + type);
+                                    //console.log('Object Id: ' + objectid);
+                                    //console.log('Module Path: ' + module);
+                                    //console.log('Slot Id: ' + slotid);
+                                    //deleteObject({type: type, objectid: objectid, module: module, slotid: slotid});
+                                    $('#deleteObjectModal').modal('show');
+                                });
+                                cell1.appendChild(inputdelete);
+
+                                if(types[k]=='Certificate Object') {
+                                    let generatecsrinput = document.createElement('input');
+                                    generatecsrinput.type = 'button';
+                                    generatecsrinput.value = 'Sign Certificate';
+                                    generatecsrinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('signcerttype').value = type;
+                                        document.getElementById('signcertobjectid').value = objectid;
+                                        document.getElementById('signcertmodule').value = module;
+                                        document.getElementById('signcertslotid').value = slotid;
+                                        document.getElementById('signcertserial').value = serial;
+                                        $('#signCertificateModal').modal('show');
+                                    });
+                                    cell1.appendChild(generatecsrinput);
+                                }
+
+                                if(types[k]=='Public Key Object') {
+                                    let generatecsrinput = document.createElement('input');
+                                    generatecsrinput.type = 'button';
+                                    generatecsrinput.value = 'Generate CSR';
+                                    generatecsrinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('csrtype').value = type;
+                                        document.getElementById('csrobjectid').value = objectid;
+                                        document.getElementById('csrmodule').value = module;
+                                        document.getElementById('csrslotid').value = slotid;
+                                        document.getElementById('csrserial').value = serial;
+                                        $('#generateCSRModal').modal('show');
+                                    });
+                                    cell1.appendChild(generatecsrinput);
+
+                                    let certimportinput = document.createElement('input');
+                                    certimportinput.type = 'button';
+                                    certimportinput.value = 'Import Certificate';
+                                    certimportinput.addEventListener('click', function(e) {
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let objectid = slotobjects[j];
+                                        let serial = slots.slots[i]['serial num'];
+                                        console.log(serial);
+                                        document.getElementById('certimpmodule').value = module;
+                                        document.getElementById('certimpslotid').value = slotid;
+                                        document.getElementById('certimpserial').value = serial;
+                                        document.getElementById('certimpobjectid').value = objectid;
+                                        $('#importCertificateModal').modal('show');
+                                    });
+                                    cell1.appendChild(certimportinput);
+
+                                    let selfsignedinput = document.createElement('input');
+                                    selfsignedinput.type = 'button';
+                                    selfsignedinput.value = 'Generate Self Signed Certificate';
+                                    selfsignedinput.addEventListener('click', function(e) {
+                                        let type = types[k];
+                                        let objectid = slotobjects[j];
+                                        let module = slots.slots[i].modulePath;
+                                        let slotid = slots.slots[i].hexid;
+                                        let serial = slots.slots[i]['serial num'];
+                                        document.getElementById('selfsigntype').value = type;
+                                        document.getElementById('selfsignobjectid').value = objectid;
+                                        document.getElementById('selfsignmodule').value = module;
+                                        document.getElementById('selfsignslotid').value = slotid;
+                                        document.getElementById('selfsignserial').value = serial;
+                                        $('#generateSelfSignedModal').modal('show');
+                                    });
+                                    cell1.appendChild(selfsignedinput);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function generateSelfSigned() {
+        let pin = document.getElementById('selfsignpin');
+        let type = document.getElementById('selfsigntype');
+        let objectid = document.getElementById('selfsignobjectid');
+        let module = document.getElementById('selfsignmodule');
+        let slotid = document.getElementById('selfsignslotid');
+        let serial = document.getElementById('selfsignserial');
+        let template = document.getElementById('selfsigntemplate');
+        let hash = document.getElementById('selfSignHash');
+        let days = document.getElementById('selfsigndays');
+
+        postRequest('/api/pkcs11/generateselfsigned', {
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.value,
+            template: template.value,
+            days: days.value,
+            hash: hash.options[hash.selectedIndex].value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                //location.reload();
+                //alert(resp.message);
+                //console.log(resp);
+                let base64output = document.getElementById('base64output').innerText = resp.message;
+                $('#generateSelfSignedModal').modal('hide');
+                $('#base64ObjectModal').modal('show');
+            }
+        });
+    }
+
+    function signCertificate() {
+        let pin = document.getElementById('signpin');
+        let type = document.getElementById('signcerttype');
+        let objectid = document.getElementById('signcertobjectid');
+        let module = document.getElementById('signcertmodule');
+        let slotid = document.getElementById('signcertslotid');
+        let serial = document.getElementById('signcertserial');
+        let template = document.getElementById('signcerttemplate');
+        let hash = document.getElementById('signcertHash');
+        let days = document.getElementById('signcertdays');
+
+        postRequest('/api/pkcs11/signcsr', {
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.value,
+            csr: template.value,
+            days: days.value,
+            hash: hash.options[hash.selectedIndex].value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                //location.reload();
+                //alert(resp.message);
+                //console.log(resp);
+                let base64output = document.getElementById('base64output').innerText = resp.message;
+                $('#signCertificateModal').modal('hide');
+                $('#base64ObjectModal').modal('show');
+            }
+        });
+    }
+
+    function generateCSR() {
+        let pin = document.getElementById('csrpin');
+        let type = document.getElementById('csrtype');
+        let objectid = document.getElementById('csrobjectid');
+        let module = document.getElementById('csrmodule');
+        let slotid = document.getElementById('csrslotid');
+        let serial = document.getElementById('csrserial');
+        let template = document.getElementById('csrtemplate');
+        let hash = document.getElementById('csrHash');
+
+        postRequest('/api/pkcs11/generatecsr', {
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.value,
+            template: template.value,
+            hash: hash.options[hash.selectedIndex].value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                //location.reload();
+                //alert(resp.message);
+                //console.log(resp);
+                let base64output = document.getElementById('base64output').innerText = resp.message;
+                $('#generateCSRModal').modal('hide');
+                $('#base64ObjectModal').modal('show');
+            }
+        });
+    }
+
+    function importPrivateKey() {
+        let label = document.getElementById('keyPairImportInputLabel');
+        let pin = document.getElementById('importPrivateKeyInputPin');
+        let serial = document.getElementById('keypairimpserial');
+        let module = document.getElementById('keypairimpmodule');
+        let slotid = document.getElementById('keypairimpslotid');
+        let objectid = document.getElementById('keyPairimportIDSelect');
+        let keytype = document.getElementById('importPrivateKeyType');
+        let logintype = document.getElementById('importPrivateKeyloginTypeSelect');
+        let key = document.getElementById('privateKeyImport');
+        let keypass = document.getElementById('privateKeyPassword');
+
+        postRequest('/api/pkcs11/importkey', {
+            label: label.value,
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.options[objectid.selectedIndex].value,
+            keytype: keytype.options[keytype.selectedIndex].value,
+            logintype: logintype.options[logintype.selectedIndex].value,
+            key: key.value,
+            keypass: keypass.value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+
+    function importCertificate() {
+        let label = document.getElementById('certificateImportInputLabel');
+        let pin = document.getElementById('importCertificateInputPin');
+        let serial = document.getElementById('certimpserial');
+        let module = document.getElementById('certimpmodule');
+        let slotid = document.getElementById('certimpslotid');
+        let objectid = document.getElementById('certimpobjectid');
+        let logintype = document.getElementById('importCertificateloginTypeSelect');
+        let cert = document.getElementById('certificateImport');
+
+        postRequest('/api/pkcs11/importcertificate', {
+            label: label.value,
+            pin: pin.value,
+            serial: serial.value,
+            module: module.value,
+            slotid: slotid.value,
+            objectid: objectid.value,
+            logintype: logintype.options[logintype.selectedIndex].value,
+            cert: cert.value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+
+    function deleteObject() {
+        let type = document.getElementById('deletetype');
+        let objectid = document.getElementById('deleteobjectid');
+        let label = document.getElementById('deletelabel');
+        let module = document.getElementById('deletemodule');
+        let slotid = document.getElementById('deleteslotid');
+        let logintype = document.getElementById('deleteObjectloginTypeSelect');
+        let pin = document.getElementById('deleteObjectInputPin');
+        //console.log(pin.value);
+        let request = {label: label.value, type: type.value, objectid: objectid.value, module: module.value, slotid: slotid.value, logintype: logintype.options[logintype.selectedIndex].value, pin: pin.value};
+        //console.log(request);
+        //return false;
+        postRequest('/api/pkcs11/delete', request, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                //console.log(resp);
+                location.reload();
+            }
+        });
+    }
+
+    function deleteSoftHSM2Slot(params) {
+        var r = confirm('Are you sure you want to delete the softHSM2 slot with serial number ' + params.serial  + '?');
+        if (r == true) {
+            postRequest('/api/softhsm2/delete', params, function(err, resp) {
+                if(err) {
+                    alert(resp.message);
+                    //console.log(response);
+                } else {
+                    //console.log(resp);
+                    location.reload();
+                }
+            });
+        } else {
+            txt = "You pressed Cancel!";
+        }
+    }
+
+    function createSoftHSM2Slot() {
+        //console.log('hello');
+        let label = document.getElementById('createSoftHSM2SlotInputLabel');
+        let sopin = document.getElementById('createSoftHSM2SlotInputSOPin');
+        let pin = document.getElementById('createSoftHSM2SlotInputPin');
+        postRequest('/api/softhsm2/create', {label: label.value, sopin: sopin.value, pin: pin.value}, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+
+    function generateKeyPair() {
+        //console.log('hello');
+        let label = document.getElementById('keyPairInputLabel');
+        let pin = document.getElementById('keyPairInputPin');
+        let keypairgenslotid = document.getElementById('keypairgenslotid');
+        let keypairgenserial = document.getElementById('keypairgenserial');
+        let keypairgenmodule = document.getElementById('keypairgenmodule');
+        let keyPairIDSelect = document.getElementById('keyPairIDSelect');
+        let keyPairKeySelect = document.getElementById('keyPairKeySelect');
+        let loginTypeSelect = document.getElementById('loginTypeSelect');
+
+        postRequest('/api/pkcs11/generatekey', {
+                label: label.value,
+                pin: pin.value,
+                slotid: keypairgenslotid.value,
+                serial: keypairgenserial.value,
+                module: keypairgenmodule.value,
+                objectid: keyPairIDSelect.options[keyPairIDSelect.selectedIndex].value,
+                keytype: keyPairKeySelect.options[keyPairKeySelect.selectedIndex].value,
+                logintype: loginTypeSelect.options[loginTypeSelect.selectedIndex].value
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                //console.log(response);
+            } else {
+                location.reload();
+                //console.log(resp);
+            }
+        });
+    }
+</script>
+<body>
+    <input type="button" value="Create SoftHSM2 Slot" class="btn btn-primary" data-toggle="modal" data-target="#createSoftHSM2SlotModal" />
+    <div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createSoftHSM2SlotModalLabel">Create a SoftHSM2 Slot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="createSoftHSM2Slot(); return false;">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputLabel">Label</label>
+                            <input type="text" class="form-control" id="createSoftHSM2SlotInputLabel" name="createSoftHSM2SlotInputLabel" aria-describedby="createSoftHSM2SlotInputHelp" placeholder="SoftHSM2 Label Name">
+                            <small id="createSoftHSM2SlotInputHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputSOPin">SO PIN</label>
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="{{sopin}}">
+                            <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="createSoftHSM2SlotInputPin">User PIN</label>
+                            <input type="password" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" aria-describedby="createSoftHSM2SlotInputPinHelp" value="{{userpin}}" placeholder="">
+                            <small id="createSoftHSM2SlotInputPinHelp" class="form-text text-muted">Enter the user PIN</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Create SoftHSM2" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="generateKeyPairModal" tabindex="-1" role="dialog" aria-labelledby="generateKeyPairModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateKeyPairModalLabel">Generate Key Pair</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="generateKeyPair(); return false;">
+                <input type="hidden" value="" name="keypairgenslotid" id="keypairgenslotid">
+                <input type="hidden" value="" name="keypairgenmodule" id="keypairgenmodule">
+                <input type="hidden" value="" name="keypairgenserial" id="keypairgenserial">
+                <div class="modal-body">
+                        <div class="form-group">
+                            <label for="keyPairInputLabel">Label</label>
+                            <input type="text" class="form-control" id="keyPairInputLabel" name="keyPairInputLabel" aria-describedby="keyPairInputLabelHelp" placeholder="SoftHSM2 Label Name">
+                            <small id="keyPairInputLabelHelp" class="form-text text-muted">Enter a friendly name for your private key</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairIDSelect">Slot Object ID</label>
+                            <select class="form-control" id="keyPairIDSelect" name="keyPairIDSelect">
+                                <option>00</option>
+                                <option>01</option>
+                                <option>02</option>
+                                <option>03</option>
+                                <option>04</option>
+                                <option>05</option>
+                                <option>06</option>
+                                <option>07</option>
+                                <option>08</option>
+                                <option>09</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairKeySelect">Private Key</label>
+                            <select class="form-control" id="keyPairKeySelect" name="keyPairKeySelect">
+                                <option>rsa:2048</option>
+                                <option>rsa:4096</option>
+                                <option>EC:prime256v1</option>
+                                <option>EC:secp384r1</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginTypeSelect">Login Type</label>
+                            <select class="form-control" id="loginTypeSelect" name="loginTypeSelect">
+                                <option>User</option>
+                                <option>Security Officer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairInputPin">PIN</label>
+                            <input type="password" class="form-control" id="keyPairInputPin" name="keyPairInputPin" aria-describedby="keyPairInputPinHelp" value="{{sopin}}" placeholder="">
+                            <small id="keyPairInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Generate Key Pair" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="deleteObjectModal" tabindex="-1" role="dialog" aria-labelledby="deleteObjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteObjectModalLabel">Delete Object</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="deleteObject(); return false;">
+                <input type="hidden" value="" name="deletetype" id="deletetype">
+                <input type="hidden" value="" name="deleteobjectid" id="deleteobjectid">
+                <input type="hidden" value="" name="deletelabel" id="deletelabel">
+                <input type="hidden" value="" name="deletemodule" id="deletemodule">
+                <input type="hidden" value="" name="deleteslotid" id="deleteslotid">
+                <div class="modal-body">
+                    <p style="margin-bottom: 20px; font-weight: bold; background-color: yellow;">
+                        WARNING! This action may delete multiple objects in the slot depending on your HSM vendor, object labels, etc. Make sure you've backed up your keys, tested, and understand how this will affect your HSM!
+                    </p>
+                        <div class="form-group">
+                            <label for="deleteObjectloginTypeSelect">Login Type</label>
+                            <select class="form-control" id="deleteObjectloginTypeSelect" name="deleteObjectloginTypeSelect">
+                                <option>User</option>
+                                <option>Security Officer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="deleteObjectInputPin">PIN</label>
+                            <input type="password" class="form-control" id="deleteObjectInputPin" name="deleteObjectInputPin" aria-describedby="deleteObjectInputPinHelp" value="{{sopin}}" placeholder="">
+                            <small id="deleteObjectInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                        </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Delete Object" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="importPrivateKeyModal" tabindex="-1" role="dialog" aria-labelledby="importPrivateKeyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importPrivateKeyModalLabel">Import Private Key</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="importPrivateKey(); return false;">
+                <input type="hidden" value="" name="keypairimpslotid" id="keypairimpslotid">
+                <input type="hidden" value="" name="keypairimpmodule" id="keypairimpmodule">
+                <input type="hidden" value="" name="keypairimpserial" id="keypairimpserial">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="keyPairImportInputLabel">Label</label>
+                        <input type="text" class="form-control" id="keyPairImportInputLabel" name="keyPairImportInputLabel" aria-describedby="keyPairImportInputLabelHelp" placeholder="SoftHSM2 Label Name">
+                        <small id="keyPairImportInputLabelHelp" class="form-text text-muted">Enter a friendly name for your private key</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="privateKeyImport">Paste ECC or RSA Private Key</label>
+                        <textarea class="form-control" id="privateKeyImport" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyType">Private Key Type</label>
+                        <select class="form-control" id="importPrivateKeyType" name="importPrivateKeyType">
+                            <option value="rsa">RSA</option>
+                            <option value="ec">ECC</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="privateKeyPassword">Encrypted Private Key Password (Optional)</label>
+                        <input type="password" class="form-control" id="privateKeyPassword" name="privateKeyPassword" aria-describedby="privateKeyPasswordHelp" value="" placeholder="">
+                        <small id="privateKeyPasswordHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="keyPairimportIDSelect">Slot Object ID</label>
+                        <select class="form-control" id="keyPairimportIDSelect" name="keyPairimportIDSelect">
+                            <option>00</option>
+                            <option>01</option>
+                            <option>02</option>
+                            <option>03</option>
+                            <option>04</option>
+                            <option>05</option>
+                            <option>06</option>
+                            <option>07</option>
+                            <option>08</option>
+                            <option>09</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyloginTypeSelect">Login Type</label>
+                        <select class="form-control" id="importPrivateKeyloginTypeSelect" name="importPrivateKeyloginTypeSelect">
+                            <option>User</option>
+                            <option>Security Officer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPrivateKeyInputPin">PIN</label>
+                        <input type="password" class="form-control" id="importPrivateKeyInputPin" name="importPrivateKeyInputPin" aria-describedby="importPrivateKeyInputPinHelp" value="{{sopin}}" placeholder="">
+                        <small id="importPrivateKeyInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Import Private Key" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="importCertificateModal" tabindex="-1" role="dialog" aria-labelledby="importCertificateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importCertificateModalLabel">Import Certificate</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="importCertificate(); return false;">
+                <input type="hidden" value="" name="certimpslotid" id="certimpslotid">
+                <input type="hidden" value="" name="certimpmodule" id="certimpmodule">
+                <input type="hidden" value="" name="certimpserial" id="certimpserial">
+                <input type="hidden" value="" name="certimpobjectid" id="certimpobjectid">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="certificateImportInputLabel">Label</label>
+                        <input type="text" class="form-control" id="certificateImportInputLabel" name="certificateImportInputLabel" aria-describedby="certificateImportInputLabelHelp" placeholder="SoftHSM2 Label Name">
+                        <small id="certificateImportInputLabelHelp" class="form-text text-muted">Enter a friendly name for your certificate</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="certificateImport">Paste your PEM/Base64 Certificate</label>
+                        <textarea class="form-control" id="certificateImport" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="importCertificateloginTypeSelect">Login Type</label>
+                        <select class="form-control" id="importCertificateloginTypeSelect" name="importCertificateloginTypeSelect">
+                            <option>User</option>
+                            <option>Security Officer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importCertificateInputPin">PIN</label>
+                        <input type="password" class="form-control" id="importCertificateInputPin" name="importCertificateInputPin" aria-describedby="importCertificateInputPinHelp" value="{{userpin}}" placeholder="">
+                        <small id="importCertificateInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Import Certificate" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="base64ObjectModal" tabindex="-1" role="dialog" aria-labelledby="base64ObjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="base64ObjectModalLabel">Request/Certificate</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <pre id="base64output"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <!--<input type="submit" class="btn btn-primary" value="Import Private Key" />-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="generateCSRModal" tabindex="-1" role="dialog" aria-labelledby="generateCSRModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateCSRModalLabel">Generate CSR</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="generateCSR(); return false;">
+                <input type="hidden" value="" name="csrtype" id="csrtype">
+                <input type="hidden" value="" name="csrobjectid" id="csrobjectid">
+                <input type="hidden" value="" name="csrslotid" id="csrslotid">
+                <input type="hidden" value="" name="csrmodule" id="csrmodule">
+                <input type="hidden" value="" name="csrserial" id="csrserial">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="csrtemplate">Paste an existing certificate to use as a template for the CSR</label>
+                        <textarea class="form-control" id="csrtemplate" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="csrHash">Select the signing hash algorithm</label>
+                        <select class="form-control" id="csrHash" name="csrHash">
+                            <option value="sha256">Hash Algorithm...</option>
+                            <option value="sha">SHA</option>
+                            <option value="md5">MD5</option>
+                            <option value="sha1">SHA1</option>
+                            <option value="sha224">SHA224</option>
+                            <option selected value="sha256">SHA256</option>
+                            <option value="sha384">SHA384</option>
+                            <option value="sha512">SHA512</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="csrpin">PIN</label>
+                        <input type="password" class="form-control" id="csrpin" name="csrpin" aria-describedby="csrpinHelp" value="{{userpin}}" placeholder="">
+                        <small id="csrpinHelp" class="form-text text-muted">Enter the user PIN to generate the CSR using the private key</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Generate CSR" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="signCertificateModal" tabindex="-1" role="dialog" aria-labelledby="signCertificateModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="signCertificateModalLabel">Sign CSR/Certificate</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="signCertificate(); return false;">
+                <input type="hidden" value="" name="signcerttype" id="signcerttype">
+                <input type="hidden" value="" name="signcertobjectid" id="signcertobjectid">
+                <input type="hidden" value="" name="signcertslotid" id="signcertslotid">
+                <input type="hidden" value="" name="signcertmodule" id="signcertmodule">
+                <input type="hidden" value="" name="signcertserial" id="signcertserial">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="signcerttemplate">Paste the CSR to be signed</label>
+                        <textarea class="form-control" id="signcerttemplate" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="signcertdays">Days</label>
+                        <input type="text" class="form-control" id="signcertdays" name="signcertdays" aria-describedby="signcertdaysHelp" value="30" placeholder="">
+                        <small id="signcertdaysHelp" class="form-text text-muted">Enter the number of days before the signed certificate will expire</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="signcertHash">Select the signing hash algorithm</label>
+                        <select class="form-control" id="signcertHash" name="signcertHash">
+                            <option value="sha256">Hash Algorithm...</option>
+                            <option value="sha">SHA</option>
+                            <option value="md5">MD5</option>
+                            <option value="sha1">SHA1</option>
+                            <option value="sha224">SHA224</option>
+                            <option selected value="sha256">SHA256</option>
+                            <option value="sha384">SHA384</option>
+                            <option value="sha512">SHA512</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="signpin">PIN</label>
+                        <input type="password" class="form-control" id="signpin" name="signpin" aria-describedby="signpinHelp" value="{{userpin}}" placeholder="">
+                        <small id="signpinHelp" class="form-text text-muted">Enter the user PIN to sign the CSR using the private key</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Sign CSR" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="generateSelfSignedModal" tabindex="-1" role="dialog" aria-labelledby="generateSelfSignedModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateSelfSignedModalLabel">Generate Self-Signed Certificate</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="generateSelfSigned(); return false;">
+                <input type="hidden" value="" name="selfsigntype" id="selfsigntype">
+                <input type="hidden" value="" name="selfsignobjectid" id="selfsignobjectid">
+                <input type="hidden" value="" name="selfsignslotid" id="selfsignslotid">
+                <input type="hidden" value="" name="selfsignmodule" id="selfsignmodule">
+                <input type="hidden" value="" name="selfsignserial" id="selfsignserial">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="selfsigntemplate">Paste an existing certificate to use as a template for the CSR</label>
+                        <textarea class="form-control" id="selfsigntemplate" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="selfsigndays">Days</label>
+                        <input type="text" class="form-control" id="selfsigndays" name="selfsigndays" aria-describedby="selfsigndaysHelp" value="7300" placeholder="">
+                        <small id="selfsigndaysHelp" class="form-text text-muted">Enter the number of days before this certificate will expire</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="selfSignHash">Select the signing hash algorithm</label>
+                        <select class="form-control" id="selfSignHash" name="selfSignHash">
+                            <option value="sha256">Hash Algorithm...</option>
+                            <option value="sha">SHA</option>
+                            <option value="md5">MD5</option>
+                            <option value="sha1">SHA1</option>
+                            <option value="sha224">SHA224</option>
+                            <option selected value="sha256">SHA256</option>
+                            <option value="sha384">SHA384</option>
+                            <option value="sha512">SHA512</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="selfsignpin">PIN</label>
+                        <input type="password" class="form-control" id="selfsignpin" name="selfsignpin" aria-describedby="selfsignpinHelp" value="{{userpin}}" placeholder="">
+                        <small id="selfsignpinHelp" class="form-text text-muted">Enter the user PIN to generate the self-signed certificate using the private key</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Generate Self-Signed Certificate" />
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+</body>

@@ -20,3 +20,9 @@ textarea {
 input[type="button"] {
   margin-right: 5px;
 }
+
+img.card-img-top {
+  padding-left: 55px;
+  padding-right: 55px;
+  padding-top: 5px;
+}
