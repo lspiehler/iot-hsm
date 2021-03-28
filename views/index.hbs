@@ -52,11 +52,19 @@
                         </select>
                     </li>
                     <li style="height: 120px;" class="list-group-item" id="slotinfo{{@index}}"><i>No slot selected</i></li>
+                    <li class="list-group-item">
+                        <div class="row">
+                            <div class="col-6 test-left">
+                                <a href="/wizard/key/{{this.[serial num]}}" class="card-link">Configure Slot</a>
+                            </div>
+                            {{#ifEquals this.[token model] 'SoftHSM v2'}}
+                            <div class="col-6 text-right">
+                                <a href="#" class="card-link">Delete HSM</a>
+                            </div>
+                            {{/ifEquals}}
+                        </div>
+                    </li>
                 </ul>
-                <div class="card-body">
-                    <a href="/wizard/key/{{this.[serial num]}}" class="card-link">Configure Slot</a>
-                    <!--<a href="#" class="card-link">Another link</a>-->
-                </div>
             </div>
         </div>
         {{/if}}

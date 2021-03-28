@@ -1,14 +1,14 @@
 <script>
     var slots = {{{slotstring}}}
-    console.log(slots);
-    console.log({{serial}});
-    var serial = {{serial}};
+    //console.log(slots);
+    //console.log({{serial}});
+    var serial = '{{serial}}';
     var slotindex;
 
     function listAvailableSlots() {
         let slots = ['01', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '20'];
 
-        let select = document.getElementById('slotid');
+        let select = document.getElementById('objectid');
         for(let i = 0; i <= slots.length - 1; i++) {
             if(checkSlotAvailability(slots[i])) {
                 var option = document.createElement("option");
@@ -33,14 +33,80 @@
     function changeKeyMethod() {
         let select = document.getElementById('keymethod');
         let submitbtn = document.getElementById('submitbtn');
+        let privatekey = document.getElementById('privatekey');
+        let generateoptions = document.getElementById('generateoptions');
         let keymethod = select.options[select.selectedIndex].value
+
         if(keymethod=='generate') {
             submitbtn.value = 'Generate Private Key';
         } else {
             submitbtn.value = 'Import Private Key';
-            //popup modal to enter private key
-            //handle form submission
         }
+
+        let generatestyle;
+        let importstyle;
+
+        if(keymethod=='generate') {
+            generatestyle = 'block';
+            importstyle = 'none';
+        } else {
+            generatestyle = 'none';
+            importstyle = 'block';
+        }
+
+        let generatefields = document.getElementsByClassName('generate');
+        for(let i = 0; i <= generatefields.length - 1; i++) {
+            generatefields[i].style.display = generatestyle;
+        }
+
+        let importfields = document.getElementsByClassName('import');
+        for(let i = 0; i <= importfields.length - 1; i++) {
+            importfields[i].style.display = importstyle;
+        }
+    }
+
+    function formHandler() {
+        let selectkeymethod = document.getElementById('keymethod');
+        let submitbtn = document.getElementById('submitbtn');
+        let selectobjectid = document.getElementById('objectid');
+        let privatekey = document.getElementById('privatekey');
+        let keyPairKeySelect = document.getElementById('keyPairKeySelect');
+        let privateKeyImport = document.getElementById('privateKeyImport');
+        let importPrivateKeyType = document.getElementById('importPrivateKeyType');
+        let privateKeyPassword = document.getElementById('privateKeyPassword');
+        let keymethod = selectkeymethod.options[selectkeymethod.selectedIndex].value;
+        let objectid = selectobjectid.options[selectobjectid.selectedIndex].value;
+
+        submitbtn.disabled = true;
+        let keytype;
+        if(keymethod=='generate') {
+            keytype = keyPairKeySelect.options[keyPairKeySelect.selectedIndex].value
+        } else {
+            keytype = importPrivateKeyType.options[importPrivateKeyType.selectedIndex].value
+        }
+
+        let params = {
+            serial: serial,
+            keyAcquisition: keymethod,
+            key: privateKeyImport.value,
+            keypass: privateKeyPassword.value,
+            objectid: objectid,
+            keytype: keytype
+        }
+
+        console.log(params);
+        postRequest('/api/wizard/key', params, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+                submitbtn.disabled = false;
+                //console.log(response);
+            } else {
+                //location.reload();
+                //alert(resp.message);
+                //console.log(resp);
+                alert(resp.message);
+            }
+        });
     }
 
     function getSlotIndex() {
@@ -53,6 +119,7 @@
     }
 
     window.onload = function() {
+        changeKeyMethod();
         let index = getSlotIndex();
         if(index >= 0) {
             slotindex = index;
@@ -70,25 +137,74 @@
                 <!--<img class="card-img-top" alt="{{this.[token model]}}">-->
                 <h3 class="pt-4 text-center card-title">Prepare Your Private Key</h3>
                 <div class="card-body">
-                    <div class="form-group">
-                        <label for="slotid">Choose an available slot:</label>
-                        <select class="form-control" id="slotid" name="slotid">
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="slotid">Choose key option:</label>
-                        <select onchange="changeKeyMethod()" class="form-control" id="keymethod" name="keymethod" aria-describedby="keymethodhelp">
-                            <option value="generate">Generate</option>
-                            <option value="import">Import</option>
-                        </select>
-                        <small id="keymethodhelp" class="form-text text-muted">*Note: The generate option is very secure and generates the key within the HSM, but it can be difficult to backup depending on your HSM. The import option can be used to import an existing private key. Extra care must be taken to ensure the key cannot be compromised.</small>
-                    </div>
-                    <div class="text-center form-group">
-                        <input id="submitbtn" type="submit" class="text-center btn btn-primary" value="Generate Private Key" />
-                    </div>
+                    <form onsubmit="formHandler(); return false;" method="POST">
+                        <div class="form-group">
+                            <label for="objectid">Choose an available slot:</label>
+                            <select class="form-control" id="objectid" name="objectid">
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="keymethod">Choose key option:</label>
+                            <select onchange="changeKeyMethod()" class="form-control" id="keymethod" name="keymethod" aria-describedby="keymethodhelp">
+                                <option selected value="generate">Generate</option>
+                                <option value="import">Import</option>
+                            </select>
+                            <small id="keymethodhelp" class="form-text text-muted">*Note: The generate option is very secure and generates the key within the HSM, but it can be difficult to backup depending on your HSM. The import option can be used to import an existing private key. Extra care must be taken to ensure the key cannot be compromised.</small>
+                        </div>
+                        <div class="form-group generate">
+                            <label for="keyPairKeySelect">Key Type:</label>
+                            <select class="form-control" id="keyPairKeySelect" name="keyPairKeySelect">
+                                <option>rsa:2048</option>
+                                <option>rsa:4096</option>
+                                <option>EC:prime256v1</option>
+                                <option>EC:secp384r1</option>
+                            </select>
+                        </div>
+                        <div class="form-group import">
+                            <label for="importPrivateKeyType">Private Key Type</label>
+                            <select class="form-control" id="importPrivateKeyType" name="importPrivateKeyType">
+                                <option value="rsa">RSA</option>
+                                <option value="ec">ECC</option>
+                            </select>
+                        </div>
+                        <div class="form-group import">
+                            <label for="privateKeyImport">Paste ECC or RSA Private Key</label>
+                            <textarea class="form-control" id="privateKeyImport" rows="6"></textarea>
+                        </div>
+                        <div class="form-group import">
+                            <label for="privateKeyPassword">Encrypted Private Key Password (Optional)</label>
+                            <input type="password" class="form-control" id="privateKeyPassword" name="privateKeyPassword" aria-describedby="privateKeyPasswordHelp" value="" placeholder="">
+                        </div>
+                        <div class="text-center form-group">
+                            <input id="submitbtn" type="submit" class="text-center btn btn-primary" value="Generate Private Key" />
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
         <div class="col-2"></div>
+    </div>
+</div>
+<div id="privatekeymodal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Paste Your Private Key</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="privatekey">Private Key</label>
+                <textarea class="form-control" id="privatekey" rows="10"></textarea>
+                <small id="privatekeyhelp" class="form-text text-muted">*Note: Currently, only unencrypted private keys are supported.</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Save</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
     </div>
 </div>
