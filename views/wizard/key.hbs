@@ -94,7 +94,8 @@
             keytype: keytype
         }
 
-        console.log(params);
+        //console.log(params);
+        $('#overlay').fadeIn();
         postRequest('/api/wizard/key', params, function(err, resp) {
             if(err) {
                 alert(resp.message);
@@ -104,7 +105,33 @@
                 //location.reload();
                 //alert(resp.message);
                 //console.log(resp);
-                alert(resp.message);
+                waitForSlots(function(err, resp) {
+                    $('#overlay').fadeOut();
+                    if(err) {
+                        alert(err);
+                    } else {
+                        //console.log(resp);
+                        window.location = '/';
+                    }
+                });
+            }
+        });
+    }
+
+    function waitForSlots(callback) {
+        getAPIRequest('/api/pkcs11/slotstatus', function(err, resp) {
+            if(err) {
+                callback(resp.message, resp);
+                //console.log(response);
+            } else {
+                //$('#overlay').fadeOut();
+                if(resp.data == 'initializing') {
+                    setTimeout(function() {
+                        waitForSlots(callback);
+                    }, 1000);
+                } else {
+                    callback(false, resp);
+                }
             }
         });
     }
@@ -207,4 +234,9 @@
         </div>
         </div>
     </div>
+</div>
+<div id="overlay" style="display:none;">
+    <div class="spinner"></div>
+    <br/>
+    Processing...
 </div>

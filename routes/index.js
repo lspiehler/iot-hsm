@@ -5,6 +5,7 @@ var config = require('../config');
 var slotlib = require('../lib/slotlib');
 const apiResponse = require('../api/apiResponse');
 const wizardkey = require('../api/wizard-key');
+const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 
 /* GET home page. */
@@ -76,6 +77,24 @@ router.post('/api/pkcs11/delete', function(req, res, next) {
 	});
 });
 
+router.get('/api/pkcs11/slotstatus', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: null
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'Successful API response',
+				data: slots.state
+			}));
+		}
+	});
+});
+
 router.post('/api/softhsm2/delete', function(req, res, next) {
 	//console.log(req.body);
 	slotlib.deleteHSM2Slot(req.body, function(err, resp) {
@@ -98,6 +117,25 @@ router.post('/api/softhsm2/delete', function(req, res, next) {
 router.post('/api/pkcs11/generatekey', function(req, res, next) {
 	console.log(req.body);
 	slotlib.generateKeyPair(req.body, function(err, resp) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: resp,
+				data: req.body
+			}));
+		}
+	});
+});
+
+router.post('/api/pkcs11/clearslot', function(req, res, next) {
+	//console.log(req.body);
+	clearslot.handler(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
 				success: false,

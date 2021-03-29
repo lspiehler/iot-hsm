@@ -1,9 +1,8 @@
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 var common = require('../lib/common');
-//const apiResponse = require('./apiResponse');
 
-function processKeyPrep(params, callback) {
+function clearSlot(params, callback) {
     slotlib.getSlots(false, function(err, slots) {
         if(err) {
             callback(err, false);
@@ -14,37 +13,42 @@ function processKeyPrep(params, callback) {
             if(slotindex < 0) {
                 callback('Failed to find token with serial ' + params.serial, false);
             } else {
-                //console.log(common.getTokenType(slots.slots[slotindex]));
+                console.log(common.getTokenType(slots.slots[slotindex]));
                 let request = {
-                    serial: params.serial,
                     slotid: slots.slots[slotindex]['hexid'],
                     module: slots.slots[slotindex]['modulePath'],
-                    keytype: params.keytype,
+                    type: 'Private Key Object',
                     objectid: params.objectid,
+                    //label: slots.slots[slotindex]['objects'][params.objectid][],
                     logintype: 'Security Officer',
                     pin: config.SOPIN
                 }
-                if(params.keyAcquisition == 'generate') {
-                    if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
-                        request.logintype = 'User';
-                        request.pin = config.USERPIN;
-                    }
-                    //console.log(generate);
-                    slotlib.generateKeyPair(request, function(err, resp) {
+                if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
+                    request.logintype = 'User';
+                    request.pin = config.USERPIN;
+                    slotlib.deleteObject(request, function(err, resp) {
                         if(err) {
                             callback(err, false);
                         } else {
-                            callback(false, resp);
+                            request.type = 'Public Key Object';
+                            slotlib.deleteObject(request, function(err, resp) {
+                                if(err) {
+                                    callback(err, false);
+                                } else {
+                                    request.type = 'Certificate Object';
+                                    slotlib.deleteObject(request, function(err, resp) {
+                                        if(err) {
+                                            callback(err, false);
+                                        } else {
+                                            callback(false, resp);
+                                        }
+                                    });
+                                }
+                            });
                         }
                     });
                 } else {
-                    if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
-                        request.logintype = 'User';
-                        request.pin = config.USERPIN;
-                    }
-                    request.key = params.key;
-                    request.keypass = params.keypass;
-                    slotlib.importPrivateKey(request, function(err, resp) {
+                    slotlib.deleteObject(request, function(err, resp) {
                         if(err) {
                             callback(err, false);
                         } else {
@@ -59,7 +63,7 @@ function processKeyPrep(params, callback) {
 
 module.exports = {
     handler: function(params, callback) {
-        processKeyPrep(params, function(err, resp) {
+        clearSlot(params, function(err, resp) {
             if(err) {
                 callback(err, resp);
             } else {

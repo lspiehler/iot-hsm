@@ -24,10 +24,65 @@
         let selectedslotvalue = selectedslot.options[selectedslot.selectedIndex].value;
 
         //console.log(selectedslotvalue);
-        slotinfo.innerHTML = 'Name: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] + '<br />\r\n\
-        ID: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '<br />\r\n\
-        Status: Connected <br />\r\n\
-        <a href="#">View Certificate</a>';
+        if(selectedslotvalue=='false') {
+            slotinfo.innerHTML = '<i>No slot selected</i>';
+        } else {
+            slotinfo.innerHTML = 'Name: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] + '<br />\r\n\
+            ID: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '<br />\r\n\
+            Status: Connected <br />\r\n\
+            <div class="row">\r\n\
+                <div class="col-6 test-left">\r\n\
+                    <a href="#">View Certificate</a>\r\n\
+                </div>\r\n\
+                <div class="col-6 text-right">\r\n\
+                    <a href="javascript: clearSlot(\'' + slots.slots[slotindex]['serial num'] + '\', \'' + selectedslotvalue + '\');" class="card-link">Clear Slot</a>\r\n\
+                </div>\r\n\
+            </div>';
+        }
+    }
+
+    function clearSlot(serial, slotid) {
+        var r = confirm("Are you sure you want to clear slot " + slotid + " in the token with serial " + serial + "?");
+        if (r == true) {
+            $('#overlay').fadeIn();
+            postRequest('/api/pkcs11/clearslot', {
+                serial: serial,
+                objectid: slotid,
+                }, function(err, resp) {
+                if(err) {
+                    alert(resp.message);
+                    //console.log(response);
+                } else {
+                    waitForSlots(function(err, resp) {
+                        $('#overlay').fadeOut();
+                        if(err) {
+                            alert(err);
+                        } else {
+                            //console.log(resp);
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    function waitForSlots(callback) {
+        getAPIRequest('/api/pkcs11/slotstatus', function(err, resp) {
+            if(err) {
+                callback(resp.message, resp);
+                //console.log(response);
+            } else {
+                //$('#overlay').fadeOut();
+                if(resp.data == 'initializing') {
+                    setTimeout(function() {
+                        waitForSlots(callback);
+                    }, 1000);
+                } else {
+                    callback(false, resp);
+                }
+            }
+        });
     }
 </script>
 <div style="margin-top: 20px;" class="container">
@@ -45,7 +100,7 @@
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
                         <select onchange="changeSlot({{@index}});" id="selectedslot{{@index}}" class="form-control">
-                            <option>{{this.objects.length}} Configured Slots...</option>
+                            <option value="false">{{this.objects.length}} Configured Slots...</option>
                             {{#each this.objects}}
                             <option value="{{@key}}">Slot {{this.[Certificate Object].[0].ID}} - {{this.[Certificate Object].[0].certinfo.subject.commonName.[0]}}</option>
                             {{/each}}
@@ -70,6 +125,11 @@
         {{/if}}
     {{/each}}
     </div>
+</div>
+<div id="overlay" style="display:none;">
+    <div class="spinner"></div>
+    <br/>
+    Processing...
 </div>
 <style>
     html, body {
