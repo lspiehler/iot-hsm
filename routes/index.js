@@ -5,6 +5,7 @@ var config = require('../config');
 var slotlib = require('../lib/slotlib');
 const apiResponse = require('../api/apiResponse');
 const wizardkey = require('../api/wizard-key');
+const wizardselfsigned = require('../api/wizard-selfsigned');
 const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 
@@ -12,10 +13,14 @@ var title = 'IoT-HSM';
 router.get('/', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
-		if(slots.state == 'initializing') {
-			res.redirect('/initializing');
+		if(err) {
+			res.status(400).send(err);
 		} else {
-			res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+			if(slots.state == 'initializing') {
+				res.redirect('/initializing');
+			} else {
+				res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+			}
 		}
 	});
 });
@@ -29,7 +34,7 @@ router.get('/reload', function(req, res, next) {
 router.get('/initializing', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		if(slots.state == 'initializing') {
-			res.render('initializing', { layout: 'init-layout', userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+			res.render('initializing', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
 		} else {
 			res.redirect('/');
 		}
@@ -38,7 +43,7 @@ router.get('/initializing', function(req, res, next) {
 
 router.get('/expert', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
-		console.log(slots);
+		//console.log(slots);
 		res.render('expert', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
@@ -50,10 +55,21 @@ router.get('/getCert', function(req, res, next) {
 router.get('/wizard/key/:serial', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
-		if(slots.state == 'initializing') {
-			res.redirect('/initializing');
+		if(err) {
+			res.status(400).send(err);
 		} else {
 			res.render('wizard/key', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		//console.log(slots);
+		if(err) {
+			res.status(400).send(err);
+		} else {
+			res.render('wizard/choices', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -89,7 +105,7 @@ router.get('/api/pkcs11/slotstatus', function(req, res, next) {
 			res.json(apiResponse.create({
 				success: true,
 				message: 'Successful API response',
-				data: slots.state
+				data: slots
 			}));
 		}
 	});
@@ -115,7 +131,7 @@ router.post('/api/softhsm2/delete', function(req, res, next) {
 });
 
 router.post('/api/pkcs11/generatekey', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	slotlib.generateKeyPair(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -290,6 +306,26 @@ router.post('/api/wizard/key', function(req, res, next) {
 				success: true,
 				message: resp,
 				data: req.body
+			}));
+		}
+	});
+});
+
+router.post('/api/wizard/selfsigned', function(req, res, next) {
+	console.log(req.body);
+	//res.json({});
+	wizardselfsigned.handler(req.body, function(err, resp) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: resp,
+				data: resp
 			}));
 		}
 	});

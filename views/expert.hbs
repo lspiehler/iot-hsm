@@ -1,6 +1,6 @@
 <script>
     var slots = {{{slotstring}}}
-    console.log(slots);
+    //console.log(slots);
 </script>
 <script>
     window.onload = function() {
@@ -63,7 +63,7 @@
                         let module = slots.slots[i].modulePath;
                         let slotid = slots.slots[i].hexid;
                         let serial = slots.slots[i]['serial num'];
-                        console.log(serial);
+                        //console.log(serial);
                         document.getElementById('keypairgenmodule').value = module;
                         document.getElementById('keypairgenslotid').value = slotid;
                         document.getElementById('keypairgenserial').value = serial;
@@ -79,7 +79,7 @@
                         let module = slots.slots[i].modulePath;
                         let slotid = slots.slots[i].hexid;
                         let serial = slots.slots[i]['serial num'];
-                        console.log(serial);
+                        //console.log(serial);
                         document.getElementById('keypairimpmodule').value = module;
                         document.getElementById('keypairimpslotid').value = slotid;
                         document.getElementById('keypairimpserial').value = serial;
@@ -190,7 +190,7 @@
                                 let inputdelete = document.createElement('input');
                                 inputdelete.type = 'button';
                                 inputdelete.value = 'Delete';
-                                console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l]['label']);
+                                //console.log(slots.slots[i].objects[slotobjects[j]][types[k]][l]['label']);
                                 inputdelete.addEventListener('click', function(e) {
                                     let type = types[k];
                                     let objectid = slotobjects[j];
@@ -258,7 +258,7 @@
                                         let slotid = slots.slots[i].hexid;
                                         let objectid = slotobjects[j];
                                         let serial = slots.slots[i]['serial num'];
-                                        console.log(serial);
+                                        //console.log(serial);
                                         document.getElementById('certimpmodule').value = module;
                                         document.getElementById('certimpslotid').value = slotid;
                                         document.getElementById('certimpserial').value = serial;

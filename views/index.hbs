@@ -1,6 +1,6 @@
 <script>
     var slots = {{{slotstring}}}
-    console.log(slots);
+    //console.log(slots);
     window.onload = function() {
         let logos = document.getElementsByClassName('card-img-top');
         for(let i = 0; i <= logos.length - 1; i++) {
@@ -27,18 +27,38 @@
         if(selectedslotvalue=='false') {
             slotinfo.innerHTML = '<i>No slot selected</i>';
         } else {
+            let status;
+            if(slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] == 'TEMPORARY CERT FOR KEY IMPORT') {
+                status = 'Partially Provisioned <a href="/wizard/provision/' + slots.slots[slotindex]['serial num'] + '/' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '">Complete Provisioning</a>'
+            } else {
+                status = 'Connected';
+            }
+            let clearslot;
+            if(selectedslotvalue=='19') {
+                clearslot = '';
+            } else {
+                clearslot = "<a href=\"javascript: clearSlot(\'" + slots.slots[slotindex]['serial num'] + "\', \'" + selectedslotvalue + "\');\" class=\"card-link\">Clear Slot</a>"
+            }
             slotinfo.innerHTML = 'Name: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] + '<br />\r\n\
             ID: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '<br />\r\n\
-            Status: Connected <br />\r\n\
+            Status: ' + status + ' <br />\r\n\
             <div class="row">\r\n\
                 <div class="col-6 test-left">\r\n\
-                    <a href="#">View Certificate</a>\r\n\
+                    <a href="javascript: viewCertificate(\'' + slotindex + '\', \'' + selectedslotvalue + '\')">View Certificate</a>\r\n\
                 </div>\r\n\
                 <div class="col-6 text-right">\r\n\
-                    <a href="javascript: clearSlot(\'' + slots.slots[slotindex]['serial num'] + '\', \'' + selectedslotvalue + '\');" class="card-link">Clear Slot</a>\r\n\
+                    ' + clearslot + '\r\n\
                 </div>\r\n\
             </div>';
         }
+    }
+
+    function viewCertificate(slotindex, selectedslotvalue) {
+        let certbody = document.getElementById('certbody');
+        let modalslotid = document.getElementById('modalslotid');
+        modalslotid.innerText = selectedslotvalue;
+        certbody.innerText = slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].base64;
+        $('#showcertmodal').modal('show');
     }
 
     function clearSlot(serial, slotid) {
@@ -50,6 +70,7 @@
                 objectid: slotid,
                 }, function(err, resp) {
                 if(err) {
+                    $('#overlay').fadeOut();
                     alert(resp.message);
                     //console.log(response);
                 } else {
@@ -66,31 +87,13 @@
             });
         }
     }
-
-    function waitForSlots(callback) {
-        getAPIRequest('/api/pkcs11/slotstatus', function(err, resp) {
-            if(err) {
-                callback(resp.message, resp);
-                //console.log(response);
-            } else {
-                //$('#overlay').fadeOut();
-                if(resp.data == 'initializing') {
-                    setTimeout(function() {
-                        waitForSlots(callback);
-                    }, 1000);
-                } else {
-                    callback(false, resp);
-                }
-            }
-        });
-    }
 </script>
-<div style="margin-top: 20px;" class="container">
+<div class="container mt-5">
     <div class="row">
     {{#each slots.slots}}
         {{#if this.[serial num]}}
-        <div class="col-sm-4 mx-auto">
-            <div class="shadow-lg card" style="width: 25rem;">
+        <div class="col-lg-6 col-sm-12 mx-auto">
+            <div class="shadow-lg card mb-5" style="width: 25rem;">
                 <img class="card-img-top" alt="{{this.[token model]}}">
                 <div class="card-body">
                     <h5 class="card-title">{{this.[token model]}}</h5>
@@ -110,7 +113,7 @@
                     <li class="list-group-item">
                         <div class="row">
                             <div class="col-6 test-left">
-                                <a href="/wizard/key/{{this.[serial num]}}" class="card-link">Configure Slot</a>
+                                <a href="/wizard/key/{{this.[serial num]}}" class="card-link">Provision Slot</a>
                             </div>
                             {{#ifEquals this.[token model] 'SoftHSM v2'}}
                             <div class="col-6 text-right">
@@ -126,10 +129,23 @@
     {{/each}}
     </div>
 </div>
-<div id="overlay" style="display:none;">
-    <div class="spinner"></div>
-    <br/>
-    Processing...
+<div id="showcertmodal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Slot <span id="modalslotid"></span> Certificate</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <pre style="font-size: .8rem;" id="certbody"></pre>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+    </div>
 </div>
 <style>
     html, body {

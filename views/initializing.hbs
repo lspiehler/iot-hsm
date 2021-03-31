@@ -1,11 +1,19 @@
 <script>
-    window.onload = function() {
+    /*window.onload = function() {
         setTimeout(function() {
             location.reload(true);
         }, 2000);
+    }*/
+    function init() {
+        location.reload(true);
+    }
+
+    window.onload = function() {
+        checkStatus();
     }
 </script>
-<div class="container">
+
+<!--<div class="container">
     <div class="row h-100">
         <div class="col-sm-12 my-auto">
             <h1>Initializing HSMs</h1>
@@ -36,4 +44,4 @@ h1 {
     max-width: 360px;
     border: 1px dotted #bbb;
 }
-</style>
+</style>-->

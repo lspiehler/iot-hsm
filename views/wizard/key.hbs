@@ -98,6 +98,7 @@
         $('#overlay').fadeIn();
         postRequest('/api/wizard/key', params, function(err, resp) {
             if(err) {
+                $('#overlay').fadeOut();
                 alert(resp.message);
                 submitbtn.disabled = false;
                 //console.log(response);
@@ -111,27 +112,9 @@
                         alert(err);
                     } else {
                         //console.log(resp);
-                        window.location = '/';
+                        window.location = '/wizard/provision/{{serial}}/' + objectid;
                     }
                 });
-            }
-        });
-    }
-
-    function waitForSlots(callback) {
-        getAPIRequest('/api/pkcs11/slotstatus', function(err, resp) {
-            if(err) {
-                callback(resp.message, resp);
-                //console.log(response);
-            } else {
-                //$('#overlay').fadeOut();
-                if(resp.data == 'initializing') {
-                    setTimeout(function() {
-                        waitForSlots(callback);
-                    }, 1000);
-                } else {
-                    callback(false, resp);
-                }
             }
         });
     }
@@ -145,15 +128,21 @@
         return -1;
     }
 
-    window.onload = function() {
+    function init() {
         changeKeyMethod();
-        let index = getSlotIndex();
-        if(index >= 0) {
-            slotindex = index;
-            listAvailableSlots();
-        } else {
-            alert('Invalid HSM serial number ' + serial);
+        if(slots.state=='initialized') {
+            let index = getSlotIndex();
+            if(index >= 0) {
+                slotindex = index;
+                listAvailableSlots();
+            } else {
+                alert('Invalid HSM serial number ' + serial);
+            }
         }
+    }
+
+    window.onload = function() {
+        checkStatus();
     }
 </script>
 <div style="margin-top: 20px;" class="container">
@@ -234,9 +223,4 @@
         </div>
         </div>
     </div>
-</div>
-<div id="overlay" style="display:none;">
-    <div class="spinner"></div>
-    <br/>
-    Processing...
 </div>

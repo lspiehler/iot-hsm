@@ -1,8 +1,9 @@
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 var common = require('../lib/common');
+//const apiResponse = require('./apiResponse');
 
-function clearSlot(params, callback) {
+function generateSelfSigned(params, callback) {
     slotlib.getSlots(false, function(err, slots) {
         if(err) {
             callback(err, false);
@@ -15,47 +16,51 @@ function clearSlot(params, callback) {
             } else {
                 //console.log(common.getTokenType(slots.slots[slotindex]));
                 let request = {
+                    serial: params.serial,
                     slotid: slots.slots[slotindex]['hexid'],
                     module: slots.slots[slotindex]['modulePath'],
-                    type: 'Private Key Object',
                     objectid: params.objectid,
-                    //label: slots.slots[slotindex]['objects'][params.objectid][],
-                    logintype: 'Security Officer',
-                    pin: config.SOPIN
+                    pin: config.USERPIN,
+                    template: params.base64
                 }
-                if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
-                    request.logintype = 'User';
-                    request.pin = config.USERPIN;
-                    slotlib.deleteObject(request, function(err, resp) {
-                        if(err) {
-                            callback(err, false);
-                        } else {
-                            request.type = 'Public Key Object';
+                slotlib.generateSelfSigned(request, function(err, resp) {
+                    if(err) {
+                        callback(err, false);
+                    } else {
+                        if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
+                            request.logintype = 'User';
+                            request.pin = config.USERPIN;
+                            request.cert = resp;
+                            request.type = 'Certificate Object';
                             slotlib.deleteObject(request, function(err, resp) {
                                 if(err) {
                                     callback(err, false);
                                 } else {
-                                    request.type = 'Certificate Object';
-                                    slotlib.deleteObject(request, function(err, resp) {
+                                    slotlib.importCertificate(request, function(err, resp) {
                                         if(err) {
                                             callback(err, false);
                                         } else {
+                                            //console.log(resp);
                                             callback(false, resp);
                                         }
                                     });
                                 }
                             });
-                        }
-                    });
-                } else {
-                    slotlib.deleteObject(request, function(err, resp) {
-                        if(err) {
-                            callback(err, false);
                         } else {
-                            callback(false, resp);
+                            request.logintype = 'Security Officer';
+                            request.pin = config.SOPIN;
+                            request.cert = resp;
+                            slotlib.importCertificate(request, function(err, resp) {
+                                if(err) {
+                                    callback(err, false);
+                                } else {
+                                    //console.log(resp);
+                                    callback(false, resp);
+                                }
+                            });
                         }
-                    });
-                }
+                    }
+                });
             }
         }
     });
@@ -63,7 +68,7 @@ function clearSlot(params, callback) {
 
 module.exports = {
     handler: function(params, callback) {
-        clearSlot(params, function(err, resp) {
+        generateSelfSigned(params, function(err, resp) {
             if(err) {
                 callback(err, resp);
             } else {

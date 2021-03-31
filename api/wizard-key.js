@@ -8,8 +8,8 @@ function processKeyPrep(params, callback) {
         if(err) {
             callback(err, false);
         } else {
-            console.log('here');
-            console.log(params);
+            //console.log('here');
+            //console.log(params);
             let slotindex = common.getSlotIndex(slots, params.serial);
             if(slotindex < 0) {
                 callback('Failed to find token with serial ' + params.serial, false);
