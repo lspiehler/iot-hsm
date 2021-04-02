@@ -1,6 +1,6 @@
 <script>
     var slots = {{{slotstring}}}
-    //console.log(slots);
+    console.log(slots);
     window.onload = function() {
         let logos = document.getElementsByClassName('card-img-top');
         for(let i = 0; i <= logos.length - 1; i++) {
@@ -16,6 +16,11 @@
                     logos[i].src = '';
             }
         }
+        checkStatus();
+    }
+
+    function init() {
+        checkSoftHSM2();
     }
 
     function changeSlot(slotindex) {
@@ -87,6 +92,32 @@
             });
         }
     }
+
+    function deleteHSM(serial) {
+        var r = confirm("Are you sure you want to delete the entire SoftHSM2 device with serial " + serial + "? This will delete the HSM and all certificates provisioned in the slots!");
+        if (r == true) {
+            $('#overlay').fadeIn();
+            postRequest('/api/softhsm2/delete', {
+                serial: serial
+                }, function(err, resp) {
+                if(err) {
+                    $('#overlay').fadeOut();
+                    alert(resp.message);
+                    //console.log(response);
+                } else {
+                    waitForSlots(function(err, resp) {
+                        $('#overlay').fadeOut();
+                        if(err) {
+                            alert(err);
+                        } else {
+                            //console.log(resp);
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        }
+    }
 </script>
 <div class="container mt-5">
     <div class="row">
@@ -117,7 +148,7 @@
                             </div>
                             {{#ifEquals this.[token model] 'SoftHSM v2'}}
                             <div class="col-6 text-right">
-                                <a href="#" class="card-link">Delete HSM</a>
+                                <a href="javascript: deleteHSM('{{this.[serial num]}}');" class="card-link">Delete HSM</a>
                             </div>
                             {{/ifEquals}}
                         </div>

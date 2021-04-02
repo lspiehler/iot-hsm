@@ -8,9 +8,21 @@
     <script src="/js/bootstrap/bootstrap.bundle.min.js"></script>
     <link href="/css/bootstrap/bootstrap.min.css" rel="stylesheet">
     <script>
+      function checkSoftHSM2() {
+        for(let i = 0; i <= slots.slots.length - 1; i++) {
+          if(slots.slots[i].name.indexOf('SoftHSM') >= 0) {
+            if(slots.slots[i].hasOwnProperty('token state')) {
+              
+            } else {
+              document.getElementById('createsofthsm2').style.display = 'none';
+              return;
+            }
+          }
+        }
+      }
+
       function checkStatus() {
         let getslots = {{{slotstring}}};
-        //console.log(getslots.state);
         if(getslots.state=='initializing') {
           $('#overlay').fadeIn();
           waitForSlots(function(err, resp) {
@@ -45,6 +57,68 @@
             }
         });
     }
+
+    function createHSM() {
+      let labelelem = document.getElementById('createSoftHSM2SlotInputLabel');
+      let sopinelem = document.getElementById('createSoftHSM2SlotInputSOPin');
+      let pinelem = document.getElementById('createSoftHSM2SlotInputPin');
+
+      let sopin;
+      let pin;
+      if(sopinelem.readOnly) {
+        sopin = false;
+      } else {
+        sopin = sopinelem.value;
+      }
+
+      if(pinelem.readOnly) {
+        pin = false;
+      } else {
+        pin = pinelem.value;
+      }
+
+      $('#overlay').fadeIn();
+      postRequest('/api/softhsm2/create', {
+          label: labelelem.value,
+          sopin: sopin,
+          pin: pin
+          }, function(err, resp) {
+          if(err) {
+              $('#overlay').fadeOut();
+              alert(resp.message);
+              //console.log(response);
+          } else {
+              waitForSlots(function(err, resp) {
+                  $('#overlay').fadeOut();
+                  if(err) {
+                      alert(err);
+                  } else {
+                      //console.log(resp);
+                      location.reload();
+                  }
+              });
+          }
+      });
+    }
+
+    function createHSMModal() {
+        $('#createSoftHSM2SlotModal').modal('show');
+    }
+
+    function changeDefault(elem, type) {
+      console.log(type);
+      if(type == 'sopin') {
+        elem.value = '010203040506070801020304050607080102030405060708';
+      } else {
+        elem.value = '123456';
+      }
+      elem.type = 'password';
+      elem.readOnly = false;
+      setTimeout(function() {
+        elem.select();
+      }, 100 );
+      elem.onclick = false;
+    }
     </script>
   </head>
   <body>
@@ -57,8 +131,8 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarCollapse">
           <ul class="navbar-nav mr-auto">
-              <li class="nav-item active">
-                  <a class="nav-link" href="/">Create SoftHSM2</a>
+              <li id="createsofthsm2" class="nav-item active">
+                  <a class="nav-link" href="javascript: createHSMModal();">Create SoftHSM2</a>
               </li>
               <!--<li class="nav-item active">
                   <a class="nav-link" href="/about-us">Update PINs</a>
@@ -76,6 +150,41 @@
       <div class="spinner"></div>
         <br/>
         Processing...
+    </div>
+    <div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createSoftHSM2SlotModalLabel">Create a SoftHSM2 Slot</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form onsubmit="createHSM(); return false;">
+                <div class="modal-body">
+                  <div class="form-group">
+                      <label for="createSoftHSM2SlotInputLabel">Label</label>
+                      <input type="text" class="form-control" id="createSoftHSM2SlotInputLabel" name="createSoftHSM2SlotInputLabel" aria-describedby="createSoftHSM2SlotInputHelp" placeholder="SoftHSM2 Label Name">
+                      <small id="createSoftHSM2SlotInputHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
+                  </div>
+                  <div class="form-group">
+                      <label for="createSoftHSM2SlotInputSOPin">SO PIN</label>
+                      <input onclick="changeDefault(this, 'sopin');" type="text" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" readonly aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="(Click to change default)">
+                      <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN</small>
+                  </div>
+                  <div class="form-group">
+                      <label for="createSoftHSM2SlotInputPin">User PIN</label>
+                      <input onclick="changeDefault(this, 'userpin');" type="text" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" readonly aria-describedby="createSoftHSM2SlotInputPinHelp" value="(Click to change default)" placeholder="">
+                      <small id="createSoftHSM2SlotInputPinHelp" class="form-text text-muted">Enter the user PIN</small>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <input type="submit" class="btn btn-primary" value="Create SoftHSM2" />
+                </div>
+            </form>
+            </div>
+        </div>
     </div>
   </body>
 </html>

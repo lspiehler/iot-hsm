@@ -22,9 +22,9 @@
         if(optionvalue=='selfsigned') {
             url = '/api/wizard/selfsigned';
         } else if(optionvalue=='csr') {
-            url = '/api/wizard/';
+            url = '/api/wizard/csr';
         } else if(optionvalue=='import') {
-            url = '/api/wizard/';
+            url = '/api/wizard/import';
         } else {
             alert('Unrecognized option!');
             return false;
@@ -39,27 +39,37 @@
                 submitbtn.disabled = false;
                 //console.log(response);
             } else {
+                if(optionvalue=='selfsigned') {
+                    waitForSlots(function(err, resp) {
+                        $('#overlay').fadeOut();
+                        if(err) {
+                            alert(err);
+                        } else {
+                            window.location = '/';
+                        }
+                    });
+                } else if(optionvalue=='csr') {
+                    $('#overlay').fadeOut();
+                    //console.log(resp);
+                    $('#showcsrmodal').modal('show');
+                    document.getElementById('csrbody').innerText = resp.data;
+                } else if(optionvalue=='import') {
+                    waitForSlots(function(err, resp) {
+                        $('#overlay').fadeOut();
+                        if(err) {
+                            alert(err);
+                        } else {
+                            window.location = '/';
+                        }
+                    });
+                } else {
+                    $('#overlay').fadeOut();
+                    alert('Unrecognized option!');
+                    return false;
+                }
                 //location.reload();
                 //alert(resp.message);
                 //console.log(resp);
-                waitForSlots(function(err, resp) {
-                    $('#overlay').fadeOut();
-                    if(err) {
-                        alert(err);
-                    } else {
-                        console.log(resp);
-                        if(optionvalue=='selfsigned') {
-                            window.location = '/';
-                        } else if(optionvalue=='csr') {
-                            url = '/api/wizard/';
-                        } else if(optionvalue=='import') {
-                            url = '/api/wizard/';
-                        } else {
-                            alert('Unrecognized option!');
-                            return false;
-                        }
-                    }
-                });
             }
         });
     }
@@ -74,6 +84,7 @@
     }
 
     function init() {
+        checkSoftHSM2();
         if(slots.state=='initialized') {
             let index = getSlotIndex();
             if(index >= 0) {
@@ -166,6 +177,25 @@
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-primary" data-dismiss="modal">Save</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+    </div>
+</div>
+<div id="showcsrmodal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Certificate Signing Request</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Use the CSR below to get a signed certificate from your certificate authority. You can return to this page later to import it.</p>
+            <pre style="font-size: .8rem;" id="csrbody"></pre>
+        </div>
+        <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
         </div>

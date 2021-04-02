@@ -129,6 +129,7 @@
     }
 
     function init() {
+        checkSoftHSM2();
         changeKeyMethod();
         if(slots.state=='initialized') {
             let index = getSlotIndex();

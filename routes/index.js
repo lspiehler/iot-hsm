@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
-var openssl = require('../lib/openssl');
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 const apiResponse = require('../api/apiResponse');
 const wizardkey = require('../api/wizard-key');
 const wizardselfsigned = require('../api/wizard-selfsigned');
+const wizardcsr = require('../api/wizard-csr');
+const wizardimport = require('../api/wizard-import');
 const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 
@@ -274,6 +275,15 @@ router.post('/api/softhsm2/create', function(req, res, next) {
 		}));
 		return;
 	}
+
+	if(req.body.pin===false) {
+		req.body.pin = '123456';
+	}
+
+	if(req.body.pin===false) {
+		req.body.pin = '010203040506070801020304050607080102030405060708';
+	}
+
 	slotlib.createHSM2Slot(req.body, function(err, resp) {
 		if(err) {
 			res.json(apiResponse.create({
@@ -312,7 +322,7 @@ router.post('/api/wizard/key', function(req, res, next) {
 });
 
 router.post('/api/wizard/selfsigned', function(req, res, next) {
-	console.log(req.body);
+	//console.log(req.body);
 	//res.json({});
 	wizardselfsigned.handler(req.body, function(err, resp) {
 		if(err) {
@@ -325,6 +335,48 @@ router.post('/api/wizard/selfsigned', function(req, res, next) {
 			res.json(apiResponse.create({
 				success: true,
 				message: resp,
+				data: resp
+			}));
+		}
+	});
+});
+
+router.post('/api/wizard/csr', function(req, res, next) {
+	//console.log(req.body);
+	//res.json({});
+	wizardcsr.handler(req.body, function(err, resp) {
+		//console.log(resp);
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'Successful API response',
+				data: resp
+			}));
+		}
+	});
+});
+
+router.post('/api/wizard/import', function(req, res, next) {
+	//console.log(req.body);
+	//res.json({});
+	wizardimport.handler(req.body, function(err, resp) {
+		//console.log(resp);
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'Successful API response',
 				data: resp
 			}));
 		}
