@@ -25,6 +25,16 @@ cd iot-hsm
 npm install
 ```
 
+## Start the Service
+```
+cd /var/node/iot-hsm
+npm start
+```
+
+Finally, navigate to http://YOUR-IP:3000
+
+The commands below are for alternative builds and can be ignored.
+
 ## Docker Command
 ```
 docker run -it -d --restart=always --name iot-hsm -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
