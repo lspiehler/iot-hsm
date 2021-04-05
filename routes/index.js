@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
+var iothsm = require('../lib/IoTHSM');
 const apiResponse = require('../api/apiResponse');
 const wizardkey = require('../api/wizard-key');
 const wizardselfsigned = require('../api/wizard-selfsigned');
@@ -20,15 +21,10 @@ router.get('/', function(req, res, next) {
 			if(slots.state == 'initializing') {
 				res.redirect('/initializing');
 			} else {
+				//console.log(iothsm.getSlots());
 				res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
 			}
 		}
-	});
-});
-
-router.get('/reload', function(req, res, next) {
-	slotlib.getSlots(true, function(err, slots) {
-		res.redirect('/');
 	});
 });
 
@@ -71,6 +67,24 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			res.render('wizard/choices', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/api/reload', function(req, res, next) {
+	slotlib.getSlots(true, function(err, slots) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: null
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'Successful API response',
+				data: slots
+			}));
 		}
 	});
 });

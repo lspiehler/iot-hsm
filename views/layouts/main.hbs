@@ -58,6 +58,18 @@
         });
     }
 
+    function reload() {
+      $('#overlay').fadeIn();
+      getAPIRequest('/api/reload', function(err, resp) {
+        if(err) {
+            alert(resp.message)
+            //console.log(response);
+        } else {
+            location.reload(true);
+        }
+      });
+    }
+
     function createHSM() {
       let labelelem = document.getElementById('createSoftHSM2SlotInputLabel');
       let sopinelem = document.getElementById('createSoftHSM2SlotInputSOPin');
@@ -138,7 +150,7 @@
                   <a class="nav-link" href="/about-us">Update PINs</a>
               </li>-->
               <li class="nav-item active">
-                  <a class="nav-link" href="/reload">Reload</a>
+                  <a class="nav-link" href="javascript: reload();">Reload</a>
               </li>
           </ul>
           <span style="color: white;">Connected Slots: 0</span>
