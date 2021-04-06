@@ -32,7 +32,8 @@ router.get('/', function(req, res, next) {
 router.get('/initializing', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		if(slots.state == 'initializing') {
-			res.render('initializing', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+			let iot = iothsm.getSlots();
+			res.render('initializing', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 		} else {
 			res.redirect('/');
 		}
@@ -42,7 +43,8 @@ router.get('/initializing', function(req, res, next) {
 router.get('/expert', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
-		res.render('expert', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+		let iot = iothsm.getSlots();
+		res.render('expert', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
 
@@ -56,7 +58,8 @@ router.get('/wizard/key/:serial', function(req, res, next) {
 		if(err) {
 			res.status(400).send(err);
 		} else {
-			res.render('wizard/key', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotstring: JSON.stringify(slots) });
+			let iot = iothsm.getSlots();
+			res.render('wizard/key', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -67,7 +70,8 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 		if(err) {
 			res.status(400).send(err);
 		} else {
-			res.render('wizard/choices', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+			let iot = iothsm.getSlots();
+			res.render('wizard/choices', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
