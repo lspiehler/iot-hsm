@@ -43,9 +43,9 @@
                 status = 'Partially Provisioned <a href="/wizard/provision/' + slots.slots[slotindex]['serial num'] + '/' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '">Complete Provisioning</a>'
             } else {
                 if(iot.hsm[slots.slots[slotindex]['serial num']][selectedslotvalue].connected) {
-                    status = 'Connected';
+                    status = '<span style="color: green;">Connected</span>';
                 } else {
-                    status = '<a href="javascript: showMessage(\'' + slots.slots[slotindex]['serial num'] + '\', \'' + selectedslotvalue + '\')">Not Connected</a>';
+                    status = '<a style="color: red" href="javascript: showMessage(\'' + slots.slots[slotindex]['serial num'] + '\', \'' + selectedslotvalue + '\')">Not Connected</a>';
                 }
             }
             let clearslot;
