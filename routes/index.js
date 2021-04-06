@@ -21,8 +21,9 @@ router.get('/', function(req, res, next) {
 			if(slots.state == 'initializing') {
 				res.redirect('/initializing');
 			} else {
-				//console.log(iothsm.getSlots());
-				res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, slots: slots, slotstring: JSON.stringify(slots) });
+				let iot = iothsm.getSlots();
+				//console.log(iot);
+				res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 			}
 		}
 	});

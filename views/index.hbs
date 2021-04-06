@@ -1,6 +1,6 @@
 <script>
     var slots = {{{slotstring}}}
-    console.log(slots);
+    //console.log(slots);
     window.onload = function() {
         let logos = document.getElementsByClassName('card-img-top');
         for(let i = 0; i <= logos.length - 1; i++) {
@@ -17,6 +17,12 @@
             }
         }
         checkStatus();
+    }
+
+    function showMessage(serial, slotid) {
+        //console.log(serial);
+        //console.log(slotid);
+        alert(iot.hsm[serial][slotid].message);
     }
 
     function init() {
@@ -36,7 +42,11 @@
             if(slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] == 'TEMPORARY CERT FOR KEY IMPORT') {
                 status = 'Partially Provisioned <a href="/wizard/provision/' + slots.slots[slotindex]['serial num'] + '/' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '">Complete Provisioning</a>'
             } else {
-                status = 'Connected';
+                if(iot.hsm[slots.slots[slotindex]['serial num']][selectedslotvalue].connected) {
+                    status = 'Connected';
+                } else {
+                    status = '<a href="javascript: showMessage(\'' + slots.slots[slotindex]['serial num'] + '\', \'' + selectedslotvalue + '\')">Not Connected</a>';
+                }
             }
             let clearslot;
             if(selectedslotvalue=='19') {
