@@ -16,9 +16,13 @@ apt -y install openssl opensc libengine-pkcs11-openssl ykcs11 softhsm2 nodejs gi
 timedatectl set-timezone UTC
 ```
 
-## Install IoT-HSM
+## Create User and Install IoT-HSM
 ```
+useradd -m iothsm
+usermod -s /bin/bash -a -G softhsm iothsm
 mkdir /var/node
+chown iothsm:iothsm /var/node
+su iothsm
 cd /var/node
 git clone https://github.com/lspiehler/iot-hsm.git
 cd iot-hsm
@@ -32,6 +36,17 @@ npm start
 ```
 
 Finally, navigate to http://YOUR-IP:3000
+
+## Start the Service at Boot
+Run the below commands as root
+```
+npm install pm2 -g
+pm2 startup ubuntu -u iothsm --hp /home/iothsm
+su iothsm
+cd /var/node/iothsm
+pm2 start ./bin/www --name="iot-hsm"
+pm2 save
+```
 
 The commands below are for alternative builds and can be ignored.
 
