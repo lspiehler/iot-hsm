@@ -10,6 +10,7 @@ const wizardcsr = require('../api/wizard-csr');
 const wizardimport = require('../api/wizard-import');
 const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
+var pinlib = require('../lib/pin');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -23,7 +24,7 @@ router.get('/', function(req, res, next) {
 			} else {
 				let iot = iothsm.getSlots();
 				//console.log(iot);
-				res.render('index', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+				res.render('index', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 			}
 		}
 	});
@@ -33,7 +34,7 @@ router.get('/initializing', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		if(slots.state == 'initializing') {
 			let iot = iothsm.getSlots();
-			res.render('initializing', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+			res.render('initializing', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 		} else {
 			res.redirect('/');
 		}
@@ -44,7 +45,7 @@ router.get('/expert', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
 		let iot = iothsm.getSlots();
-		res.render('expert', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+		res.render('expert', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
 
@@ -59,7 +60,7 @@ router.get('/wizard/key/:serial', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
-			res.render('wizard/key', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
+			res.render('wizard/key', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -71,7 +72,7 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
-			res.render('wizard/choices', { userpin: config.USERPIN, sopin: config.SOPIN, title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+			res.render('wizard/choices', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -385,6 +386,25 @@ router.post('/api/wizard/import', function(req, res, next) {
 	//console.log(req.body);
 	//res.json({});
 	wizardimport.handler(req.body, function(err, resp) {
+		//console.log(resp);
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'Successful API response',
+				data: resp
+			}));
+		}
+	});
+});
+
+router.post('/api/pin/set', function(req, res, next) {
+	pinlib.setPins(req.body, function(err, resp) {
 		//console.log(resp);
 		if(err) {
 			res.json(apiResponse.create({

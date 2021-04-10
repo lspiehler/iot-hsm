@@ -1,20 +1,35 @@
 <script>
     var slots = {{{slotstring}}}
-    //console.log(slots);
+    console.log(slots);
     //console.log({{serial}});
     var serial = '{{serial}}';
     var slotindex;
 
     function listAvailableSlots() {
-        let slots = ['01', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '20'];
+        let yubikeyskip = [2, 3, 4, 19];
 
         let select = document.getElementById('objectid');
-        for(let i = 0; i <= slots.length - 1; i++) {
-            if(checkSlotAvailability(slots[i])) {
-                var option = document.createElement("option");
-                option.text = slots[i];
-                option.value = slots[i];
-                select.add(option);
+        for(let i = 1; i <= 26 - 1; i++) {
+            let slotnum;
+            if(i.toString().length==1) {
+                slotnum = '0' + i.toString();
+            } else {
+                slotnum = i.toString();
+            }
+            if(checkSlotAvailability(slotnum)) {
+                if(getTokenType(slots.slots[slotindex])=='yubikey') {
+                    if(yubikeyskip.indexOf(i) < 0) {
+                        var option = document.createElement("option");
+                        option.text = slotnum;
+                        option.value = slotnum;
+                        select.add(option);
+                    }
+                } else {
+                    var option = document.createElement("option");
+                    option.text = slotnum;
+                    option.value = slotnum;
+                    select.add(option);
+                }
             }
         }
     }
@@ -126,6 +141,16 @@
             }
         }
         return -1;
+    }
+
+    function getTokenType(slot) {
+        //console.log('here');
+        //console.log(slot);
+        if(slot.modulePath.indexOf('libykcs') >= 0) {
+            return 'yubikey'
+        } else {
+            return 'softhsm';
+        }
     }
 
     function init() {

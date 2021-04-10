@@ -73,7 +73,7 @@
     }
 
     function createHSM() {
-      let labelelem = document.getElementById('createSoftHSM2SlotInputLabel');
+      /*let labelelem = document.getElementById('createSoftHSM2SlotInputLabel');
       let sopinelem = document.getElementById('createSoftHSM2SlotInputSOPin');
       let pinelem = document.getElementById('createSoftHSM2SlotInputPin');
 
@@ -89,11 +89,15 @@
         pin = false;
       } else {
         pin = pinelem.value;
-      }
+      }*/
+
+      let sopin = false;
+      let pin = false;
+      let label = 'SoftHSM2';
 
       $('#overlay').fadeIn();
       postRequest('/api/softhsm2/create', {
-          label: labelelem.value,
+          label: label,
           sopin: sopin,
           pin: pin
           }, function(err, resp) {
@@ -116,7 +120,11 @@
     }
 
     function createHSMModal() {
-        $('#createSoftHSM2SlotModal').modal('show');
+        //$('#createSoftHSM2SlotModal').modal('show');
+        var r = confirm("Are you sure you want to create a new SoftHSM2 slot?");
+        if (r == true) {
+          createHSM();
+        }
     }
 
     function changeDefault(elem, type) {
@@ -165,7 +173,7 @@
         <br/>
         Processing...
     </div>
-    <div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
+    <!--<div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
             <div class="modal-header">
@@ -199,6 +207,6 @@
             </form>
             </div>
         </div>
-    </div>
+    </div>-->
   </body>
 </html>

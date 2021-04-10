@@ -22,7 +22,7 @@
     function showMessage(serial, slotid) {
         //console.log(serial);
         //console.log(slotid);
-        alert(iot.hsm[serial][slotid].message);
+        alert(iot.hsm[serial][slotid].message || 'Pending connection...');
     }
 
     function init() {
@@ -126,7 +126,48 @@
                     });
                 }
             });
+        } else {
+            let hsmoptions = document.getElementById('hsm' + serial);
+            hsmoptions.selectedIndex = 0;
         }
+    }
+
+    function setPINs() {
+        let selectedserial = document.getElementById('selectedserial');
+        let setsopin = document.getElementById('setSOPin');
+        let setuserpin = document.getElementById('setUserPin');
+        let persist = document.getElementById('persist');
+        postRequest('/api/pin/set', {
+            serial: selectedserial.value,
+            sopin: setsopin.value,
+            userpin: setuserpin.value,
+            persist: persist.checked
+            }, function(err, resp) {
+            if(err) {
+                alert(resp.message);
+            } else {
+                $('#setPINModal').modal('hide');
+                reload();
+            }
+        });
+    }
+
+    function HSMOptions(serial) {
+        let hsmoptions = document.getElementById('hsm' + serial);
+        let hsmoptionvalue = hsmoptions.options[hsmoptions.selectedIndex].value;
+        if(hsmoptionvalue=='provision') {
+            window.location = '/wizard/key/' + serial;
+        } else if(hsmoptionvalue=='delete') {
+            deleteHSM(serial);
+        } else if(hsmoptionvalue=='pins') {
+            let selectedserial = document.getElementById('selectedserial');
+            selectedserial.value = serial;
+            $('#setPINModal').modal('show');
+            hsmoptions.selectedIndex = 0;
+        } else {
+
+        }
+        console.log(hsmoptionvalue);
     }
 </script>
 <div class="container mt-5">
@@ -153,14 +194,23 @@
                     <li style="height: 120px;" class="list-group-item" id="slotinfo{{@index}}"><i>No slot selected</i></li>
                     <li class="list-group-item">
                         <div class="row">
-                            <div class="col-6 test-left">
+                            <!--<div class="col-6 test-left">
                                 <a href="/wizard/key/{{this.[serial num]}}" class="card-link">Provision Slot</a>
                             </div>
                             {{#ifEquals this.[token model] 'SoftHSM v2'}}
                             <div class="col-6 text-right">
                                 <a href="javascript: deleteHSM('{{this.[serial num]}}');" class="card-link">Delete HSM</a>
                             </div>
-                            {{/ifEquals}}
+                            {{/ifEquals}}-->
+                            <select onchange="HSMOptions('{{this.[serial num]}}');" id="hsm{{this.[serial num]}}" class="ml-3 mr-3 form-control">
+                                <option value="false">HSM Options...</option>
+                                <option value="provision">Provision a New Slot</option>
+                                {{#ifEquals this.[token model] 'SoftHSM v2'}}
+                                <option value="delete">Delete HSM</option>
+                                {{else}}
+                                <option value="pins">Set PINs</option>
+                                {{/ifEquals}}
+                        </select>
                         </div>
                     </li>
                 </ul>
@@ -185,6 +235,43 @@
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="setPINModal" tabindex="-1" role="dialog" aria-labelledby="setPINModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Set PINs</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <form onsubmit="setPINs(); return false;">
+            <div class="modal-body">
+                <p>The options below make this device aware of the PINs on the selected HSM. They are not used to change the PINs on the HSM.</p>
+                <input id="selectedserial" name="selectedserial" type="hidden" />
+                <div class="form-group">
+                    <label for="setSOPin">SO PIN</label>
+                    <input type="password" class="form-control" id="setSOPin" name="setSOPin" aria-describedby="setSOPinHelp" value="">
+                    <small id="setSOPinHelp" class="form-text text-muted">Enter the security officer PIN</small>
+                </div>
+                <div class="form-group">
+                    <label for="setUserPin">User PIN</label>
+                    <input type="password" class="form-control" id="setUserPin" name="setUserPin" aria-describedby="setUserPinHelp" value="" placeholder="">
+                    <small id="setUserPinHelp" class="form-text text-muted">Enter the user PIN</small>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="persist">
+                    <label class="form-check-label" for="persist">Write To Disk</label>
+                    <small id="persistHelp" class="form-text text-muted">Enabling this option will allow the stored PIN to persist after a reboot, but will result in the PIN being written to disk using VERY basic encryption.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <input type="submit" class="btn btn-primary" value="Save PINs" />
+            </div>
+        </form>
         </div>
     </div>
 </div>
