@@ -60,7 +60,15 @@
         });
     }
 
-    function reload() {
+    function reload(manual) {
+      if(manual) {
+        var r = confirm("Are you sure you want to reload? This will interrupt all signing operations while certificates on the HSMs are processed.");
+        if (r == true) {
+          //continue
+        } else {
+          return false;
+        }
+      }
       $('#overlay').fadeIn();
       getAPIRequest('/api/reload', function(err, resp) {
         if(err) {
@@ -160,7 +168,7 @@
                   <a class="nav-link" href="/about-us">Update PINs</a>
               </li>-->
               <li class="nav-item active">
-                  <a class="nav-link" href="javascript: reload();">Reload</a>
+                  <a class="nav-link" href="javascript: reload(true);">Reload</a>
               </li>
           </ul>
           <span style="color: white;">Connected Slots: {{iot.connected}}</span>
