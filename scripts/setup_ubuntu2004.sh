@@ -148,7 +148,7 @@ if [ ! -f "/etc/apache2/.htpasswd" ]; then
 fi
 
 #Set recommended permissions and ownership for .htpasswd file
-chown apache:apache /etc/apache2/.htpasswd
+chown www-data:www-data /etc/apache2/.htpasswd
 chmod 640 /etc/apache2/.htpasswd
 
 #If default admin password is set to default, prompt to change it
