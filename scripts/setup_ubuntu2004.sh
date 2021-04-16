@@ -143,7 +143,7 @@ systemctl restart apache2
 ufw allow 'Apache'
 
 #Create default admin user if .htpasswd doesn't exist
-if [ -f "/etc/apache2/.htpasswd" ]; then
+if [ ! -f "/etc/apache2/.htpasswd" ]; then
     htpasswd -b -c /etc/apache2/.htpasswd admin admin
 fi
 
