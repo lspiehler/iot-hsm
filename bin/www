@@ -37,7 +37,7 @@ slotlib.event.on('changed', function(cachedslots) {
 	 * Get port from environment and store in Express.
 	 */
 
-	var port = normalizePort(process.env.PORT || '3000');
+	var port = normalizePort(config.PORT);
 	app.set('port', port);
 
 	/**
@@ -50,7 +50,7 @@ slotlib.event.on('changed', function(cachedslots) {
 	 * Listen on provided port, on all network interfaces.
 	 */
 
-	server.listen(port);
+	server.listen(port, config.LISTENIP);
 	server.on('error', onError);
 	server.on('listening', onListening);
 
