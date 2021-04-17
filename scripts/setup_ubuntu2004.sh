@@ -158,7 +158,7 @@ htpasswd -vb /etc/apache2/.htpasswd admin admin 2> /dev/null && echo "Enter a ne
 banner IoT-HSM
 echo "You've successfully installed IoT-HSM"
 echo 
-echo "The certificates for this appliance can be replaced by updating /etc/ssl/certs/iothsm.pem and /etc/ssl/private/iothsm.key"
+echo "The certificates for this appliance can be replaced by updating /etc/ssl/certs/iothsm.pem and /etc/ssl/private/iothsm.key and reloading apache with the command \"systemctl reload apache2\""
 echo
 echo "The password for the web interface can be changed by running the command \"htpasswd /etc/apache2/.htpasswd admin\""
 echo

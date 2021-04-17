@@ -1,54 +1,25 @@
 # IoT-HSM
 IoT-HSM allows Yubikeys and SoftHSM2 devices to be managed and serve as an "IoT HSM" interface for signing operations from PKIaaS.io.
 
-## Install dependencies
-Example below is for Ubuntu 20.04
+## Install IoT-HSM on Ubuntu 20.04
+The following commands should be run as root on a base install of Ubuntu 20.04. You can switch to the root user using the "su" command or "sudo su -"
 ```
 apt update
 apt -y install curl
-curl -sL https://deb.nodesource.com/setup_14.x | bash -
-apt update
-apt -y install openssl opensc libengine-pkcs11-openssl ykcs11 softhsm2 nodejs git yubico-piv-tool
+curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu2004.sh | bash -
 ```
 
-## Set timezone to UTC
+You should now be able to login and begin managing your HSM by navigating to https://youripaddress
+
+The password for the web interface can be changed by running the following command from a terminal as root or by prefixing the command with "sudo": 
 ```
-timedatectl set-timezone UTC
+htpasswd /etc/apache2/.htpasswd admin
 ```
 
-## Create User and Install IoT-HSM
+The certificates for this appliance can be replaced by updating /etc/ssl/certs/iothsm.pem with your signed certificate and /etc/ssl/private/iothsm.key with your private key and reloading apache with the following command from a terminal as root or by prefixing the command with "sudo":
 ```
-useradd -m iothsm
-usermod -s /bin/bash -a -G softhsm iothsm
-mkdir /var/node
-chown iothsm:iothsm /var/node
-su iothsm
-cd /var/node
-git clone https://github.com/lspiehler/iot-hsm.git
-cd iot-hsm
-npm install
+systemctl reload apache2
 ```
-
-## Start the Service
-```
-cd /var/node/iot-hsm
-npm start
-```
-
-Finally, navigate to http://YOUR-IP:3000
-
-## Start the Service at Boot
-Run the below commands as root
-```
-npm install pm2 -g
-pm2 startup ubuntu -u iothsm --hp /home/iothsm
-su iothsm
-cd /var/node/iothsm
-pm2 start ./bin/www --name="iot-hsm"
-pm2 save
-```
-
-The commands below are for alternative builds and can be ignored.
 
 ## Docker Command
 ```
