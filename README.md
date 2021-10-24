@@ -23,7 +23,7 @@ systemctl reload apache2
 
 ## Docker Command
 ```
-docker run -it -d --restart=always --name iot-hsm -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
+docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
 ```
 
 ## Snap Build
