@@ -32,3 +32,18 @@ apt install -y snapd
 snap install snapcraft --classic
 snapcraft
 ```
+
+### Troubleshooting
+Uninstall dependencies
+```
+apt remove opensc libengine-pkcs11-openssl ykcs11 softhsm2 yubico-piv-tool
+apt autoremove
+```
+Reinstall dependencies
+```
+apt install opensc libengine-pkcs11-openssl ykcs11 softhsm2 yubico-piv-tool
+```
+Run manually, specifying environment variables
+```
+LISTENIP=0.0.0.0 PORT=3001 PLATFORMFQDN=pkiaas.io node bin/www
+```
