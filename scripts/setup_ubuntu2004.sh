@@ -7,7 +7,7 @@ apt update
 apt -y install curl
 
 #Install node repos
-curl -sL https://deb.nodesource.com/setup_18.x | bash -
+curl -sL https://deb.nodesource.com/setup_20.x | bash -
 
 #Install all required software
 apt -y install sysvbanner openssl opensc libengine-pkcs11-openssl ykcs11 softhsm2 nodejs git yubico-piv-tool apache2 apache2-utils
