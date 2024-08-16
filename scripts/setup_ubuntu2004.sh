@@ -19,6 +19,25 @@ timedatectl set-timezone UTC
 useradd -m iothsm
 usermod -s /bin/bash -a -G softhsm iothsm
 
+#allow iothsm user access to "smartcards"
+cat << EOF > /usr/share/polkit-1/rules.d/sssd-pcsc.rules
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.debian.pcsc-lite.access_card" &&
+        subject.user == "iothsm") {
+            return polkit.Result.YES;
+    }
+});
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.debian.pcsc-lite.access_pcsc" &&
+        subject.user == "iothsm") {
+            return polkit.Result.YES;
+    }
+});
+EOF
+
+systemctl restart polkit
+
 #Create directory and set ownership
 mkdir /var/node
 chown iothsm:iothsm /var/node
