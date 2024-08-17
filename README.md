@@ -47,3 +47,10 @@ Run manually, specifying environment variables
 ```
 LISTENIP=0.0.0.0 PORT=3001 PLATFORMFQDN=pkiaas.io node bin/www
 ```
+
+```
+pkcs11-tool --show-info --module /usr/lib/x86_64-linux-gnu/libykcs11.so
+pkcs11-tool --list-slots --module /usr/lib/x86_64-linux-gnu/libykcs11.so
+pkcs11-tool --list-objects --module /usr/lib/x86_64-linux-gnu/libykcs11.so --slot 0
+pkcs11-tool --module /usr/lib/x86_64-linux-gnu/libykcs11.so --login --login-type so --so-pin 010203040506070801020304050607080102030405060708 --slot 0x0 --id 13 --delete-object --type privkey
+```
