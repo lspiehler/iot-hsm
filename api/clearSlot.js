@@ -67,7 +67,21 @@ function clearSlot(params, callback) {
                                 if(err) {
                                     callback(err, false);
                                 } else {
-                                    callback(false, resp);
+                                    request.type = 'Public Key Object';
+                                    slotlib.deleteObject(request, function(err, resp) {
+                                        if(err) {
+                                            callback(err, false);
+                                        } else {
+                                            request.type = 'Certificate Object';
+                                            slotlib.deleteObject(request, function(err, resp) {
+                                                if(err) {
+                                                    callback(err, false);
+                                                } else {
+                                                    callback(false, resp);
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                             });
                         }
