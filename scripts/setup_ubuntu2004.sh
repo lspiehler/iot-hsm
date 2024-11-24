@@ -10,7 +10,13 @@ apt -y install curl
 curl -sL https://deb.nodesource.com/setup_20.x | bash -
 
 #Install all required software
-apt -y install sysvbanner openssl opensc libengine-pkcs11-openssl ykcs11 softhsm2 nodejs git yubico-piv-tool apache2 apache2-utils
+apt -y install sysvbanner openssl libengine-pkcs11-openssl softhsm2 nodejs git apache2 apache2-utils
+
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
+
+add-apt-repository -y ppa:yubico/stable
+
+apt -y install opensc ykcs11 yubico-piv-tool
 
 #Time zone must be set to UTC!
 timedatectl set-timezone UTC
