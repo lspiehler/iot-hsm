@@ -7,10 +7,10 @@ apt update
 apt -y install curl
 
 #Install node repos
-curl -sL https://deb.nodesource.com/setup_20.x | bash -
+curl -sL https://deb.nodesource.com/setup_22.x | bash -
 
 #Install all required software
-apt -y install sysvbanner openssl libengine-pkcs11-openssl softhsm2 nodejs git apache2 apache2-utils
+apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils
 
 apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
 
