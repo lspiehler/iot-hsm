@@ -22,7 +22,7 @@
     "moment": "^2.29.1",
     "morgan": "~1.9.1",
     "node-openssl-cert": "^0.1.40",
-    "node-openssl-cert2": "^0.7.26",
+    "node-openssl-cert2": "^0.7.29",
     "pubnub": "^8.2.7",
     "uuid": "^8.3.2",
     "zlib": "^1.0.5"
