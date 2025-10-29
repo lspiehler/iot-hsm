@@ -7,16 +7,16 @@ apt update
 apt -y install curl
 
 #Install node repos
-curl -sL https://deb.nodesource.com/setup_22.x | bash -
+curl -sL https://deb.nodesource.com/setup_24.x | bash -
 
-#Install all required software
-apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils
+#Install all required software. Add ufw and openssh-server in case of a minimal install
+apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils opensc ykcs11 yubico-piv-tool ufw openssh-server
 
-apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
+# apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
 
-add-apt-repository -y ppa:yubico/stable
+# add-apt-repository -y ppa:yubico/stable
 
-apt -y install opensc ykcs11 yubico-piv-tool
+# apt -y install opensc ykcs11 yubico-piv-tool
 
 #Time zone must be set to UTC!
 timedatectl set-timezone UTC
