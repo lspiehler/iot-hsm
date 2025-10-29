@@ -41,28 +41,37 @@ function clearSlot(params, callback) {
                         if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
                             request.logintype = 'User';
                             request.pin = userpin
+                            slotlib.deleteObject(request, function(err, resp) {
+                                if(err) {
+                                    callback(err, false);
+                                } else {
+                                    request.type = 'Public Key Object';
+                                    slotlib.deleteObject(request, function(err, resp) {
+                                        if(err) {
+                                            callback(err, false);
+                                        } else {
+                                            request.type = 'Certificate Object';
+                                            slotlib.deleteObject(request, function(err, resp) {
+                                                if(err) {
+                                                    callback(err, false);
+                                                } else {
+                                                    callback(false, resp);
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            slotlib.deleteObject(request, function(err, resp) {
+                                if(err) {
+                                    callback(err, false);
+                                } else {
+                                    callback(false, resp);
+                                }
+                            });
                         }
-                        slotlib.deleteObject(request, function(err, resp) {
-                            if(err) {
-                                callback(err, false);
-                            } else {
-                                request.type = 'Public Key Object';
-                                slotlib.deleteObject(request, function(err, resp) {
-                                    if(err) {
-                                        callback(err, false);
-                                    } else {
-                                        request.type = 'Certificate Object';
-                                        slotlib.deleteObject(request, function(err, resp) {
-                                            if(err) {
-                                                callback(err, false);
-                                            } else {
-                                                callback(false, resp);
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
+                        
                     }
                 }
             });

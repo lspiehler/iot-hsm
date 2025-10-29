@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-var openssl = require('../lib/openssl');
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 var IoTHSM = require('../lib/IoTHSM');

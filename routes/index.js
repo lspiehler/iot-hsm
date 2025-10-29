@@ -342,7 +342,7 @@ router.post('/api/wizard/key', function(req, res, next) {
 });
 
 router.post('/api/wizard/selfsigned', function(req, res, next) {
-	//console.log(req.body);
+	// console.log(req.body);
 	//res.json({});
 	wizardselfsigned.handler(req.body, function(err, resp) {
 		if(err) {
