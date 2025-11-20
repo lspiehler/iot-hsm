@@ -30,6 +30,7 @@ function generateSelfSigned(params, callback) {
                         callback('Failed to find token with serial ' + params.serial, false);
                     } else {
                         //console.log(common.getTokenType(slots.slots[slotindex]));
+                        // console.log(slots.slots[slotindex]);
                         let request = {
                             serial: params.serial,
                             slotid: slots.slots[slotindex]['hexid'],
@@ -42,6 +43,7 @@ function generateSelfSigned(params, callback) {
                             if(err) {
                                 callback(err, false);
                             } else {
+                                // console.log(resp);
                                 if(common.getTokenType(slots.slots[slotindex])=='softhsm') {
                                     request.logintype = 'User';
                                     request.pin = userpin;

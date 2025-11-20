@@ -12,6 +12,9 @@
                 case "YubiKey":
                     logos[i].src = '/images/yubikey-iot.png';
                     break;
+                case "Cloud":
+                    logos[i].src = '/images/google-cloud-logo.png';
+                    break;
                 default:
                     logos[i].src = '';
             }
@@ -56,8 +59,13 @@
             } else {
                 clearslot = "<a href=\"javascript: clearSlot(\'" + slots.slots[slotindex]['serial num'] + "\', \'" + selectedslotvalue + "\');\" class=\"card-link\">Clear Slot</a>"
             }
+            let id = slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID;
+            if(!id) {
+                id = slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].label;
+
+            }
             slotinfo.innerHTML = 'Name: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].certinfo.subject.commonName[0] + '<br />\r\n\
-            ID: ' + slots.slots[slotindex].objects[selectedslotvalue]['Certificate Object'][0].ID + '<br />\r\n\
+            ID: ' + id + '<br />\r\n\
             Status: ' + status + ' <br />\r\n\
             <div class="row">\r\n\
                 <div class="col-6 test-left">\r\n\
@@ -159,6 +167,8 @@
         let hsmoptionvalue = hsmoptions.options[hsmoptions.selectedIndex].value;
         if(hsmoptionvalue=='provision') {
             window.location = '/wizard/key/' + serial;
+        } else if(hsmoptionvalue=='google') {
+            window.location = '/wizard/google/' + serial;
         } else if(hsmoptionvalue=='delete') {
             deleteHSM(serial);
         } else if(hsmoptionvalue=='pins') {
@@ -189,7 +199,13 @@
                         <select onchange="changeSlot({{@index}});" id="selectedslot{{@index}}" class="form-control">
                             <option value="false">{{this.objects.length}} Configured Slots...</option>
                             {{#each this.objects}}
+                            {{#if this.[Certificate Object].[0].ID}}
                             <option value="{{@key}}">Slot {{this.[Certificate Object].[0].ID}} - {{this.[Certificate Object].[0].certinfo.subject.commonName.[0]}}</option>
+                            {{else}}
+                            {{#if this.[Certificate Object].[0].label}}
+                            <option value="{{@key}}">Slot {{this.[Certificate Object].[0].label}} - {{this.[Certificate Object].[0].certinfo.subject.commonName.[0]}}</option>
+                            {{/if}}
+                            {{/if}}
                             {{/each}}
                         </select>
                     </li>
@@ -206,10 +222,15 @@
                             {{/ifEquals}}-->
                             <select onchange="HSMOptions('{{this.[serial num]}}');" id="hsm{{this.[serial num]}}" class="ml-3 mr-3 form-control">
                                 <option value="false">HSM Options...</option>
+                                {{#ifEquals this.[token model] 'Cloud KMS Token'}}
+                                <option value="google">Provision a Slot</option>
+                                {{else}}
                                 <option value="provision">Provision a New Slot</option>
+                                {{/ifEquals}}
                                 {{#ifEquals this.[token model] 'SoftHSM v2'}}
                                 <option value="delete">Delete HSM</option>
-                                {{else}}
+                                {{/ifEquals}}
+                                {{#ifEquals this.[token model] 'YubiKey YK5'}}
                                 <option value="pins">Set PINs</option>
                                 {{/ifEquals}}
                         </select>

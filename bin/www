@@ -3,6 +3,7 @@
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 var IoTHSM = require('../lib/IoTHSM');
+var state = require('../lib/state');
 
 var server;
 var debug = require('debug')('pkcs11iot:server');

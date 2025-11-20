@@ -55,12 +55,24 @@ router.get('/getCert', function(req, res, next) {
 
 router.get('/wizard/key/:serial', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
-		//console.log(slots);
+		// console.log(slots);
 		if(err) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
 			res.render('wizard/key', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/wizard/google/:serial', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		// console.log(slots);
+		if(err) {
+			res.status(400).send(err);
+		} else {
+			let iot = iothsm.getSlots();
+			res.render('wizard/google', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
