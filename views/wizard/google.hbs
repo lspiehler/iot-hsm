@@ -2,6 +2,7 @@
     var slots = {{{slotstring}}}
 
     window.onload = function() {
+        checkSoftHSM2();
         var select = document.getElementById("objectid");
         for(var i = 0; i < slots.slots.length; i++) {
             if(slots.slots[i]['token manufacturer'] == 'Google') {
