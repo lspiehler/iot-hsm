@@ -2,33 +2,9 @@
     var slots = {{{slotstring}}}
 
     window.onload = function() {
-        var select = document.getElementById("objectid");
-        for(var i = 0; i < slots.slots.length; i++) {
-            if(slots.slots[i]['token manufacturer'] == 'Google') {
-                let objects = Object.keys(slots.slots[i].objects);
-                console.log(objects);
-                for(let j = 0; j < objects.length; j++) {
-                    console.log('Adding option for ' + objects[j]);
-                    if(slots.slots[i].objects[objects[j]].hasOwnProperty('Certificate Object') == false) {
-                        var option = document.createElement("option");
-                        option.text = objects[j];
-                        option.value = objects[j];
-                        select.add(option);
-                    }
-                }
-            }
-        }
+        checkSoftHSM2();
     }
 
-    function formHandler() {
-        let submitbtn = document.getElementById('submitbtn');
-        let selectobjectid = document.getElementById('objectid');
-        let objectid = selectobjectid.options[selectobjectid.selectedIndex].value;
-
-        submitbtn.disabled = true;
-
-        window.location = '/wizard/provision/{{serial}}/' + objectid;
-    }
 </script>
 <div style="margin-top: 20px;" class="container">
     <div class="row">
@@ -51,7 +27,7 @@
                                 </select>
                             </div>
                             <div class='form-group col-sm-4'>
-                                Ket Ring: &nbsp;<select id='builder-columns' class='form-control'>
+                                Key Ring: &nbsp;<select id='builder-columns' class='form-control'>
                                     <option selected value='none'>Location</option>
                                 </select>
                             </div>
