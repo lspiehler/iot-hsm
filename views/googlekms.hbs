@@ -1,0 +1,65 @@
+<script>
+    var slots = {{{slotstring}}}
+
+    window.onload = function() {
+        var select = document.getElementById("objectid");
+        for(var i = 0; i < slots.slots.length; i++) {
+            if(slots.slots[i]['token manufacturer'] == 'Google') {
+                let objects = Object.keys(slots.slots[i].objects);
+                console.log(objects);
+                for(let j = 0; j < objects.length; j++) {
+                    console.log('Adding option for ' + objects[j]);
+                    if(slots.slots[i].objects[objects[j]].hasOwnProperty('Certificate Object') == false) {
+                        var option = document.createElement("option");
+                        option.text = objects[j];
+                        option.value = objects[j];
+                        select.add(option);
+                    }
+                }
+            }
+        }
+    }
+
+    function formHandler() {
+        let submitbtn = document.getElementById('submitbtn');
+        let selectobjectid = document.getElementById('objectid');
+        let objectid = selectobjectid.options[selectobjectid.selectedIndex].value;
+
+        submitbtn.disabled = true;
+
+        window.location = '/wizard/provision/{{serial}}/' + objectid;
+    }
+</script>
+<div style="margin-top: 20px;" class="container">
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-8 mx-auto">
+            <div class="shadow-lg card" style="width: 100%;">
+                <!--<img class="card-img-top" alt="{{this.[token model]}}">-->
+                <h3 class="pt-4 text-center card-title">Configure Google KMS</h3>
+                <div class="card-body">
+                    <form onsubmit="formHandler(); return false;" method="POST">
+                        <div class="form-inline row">
+                            <div class='form-group col-sm-4'>
+                                Project: &nbsp;<select id='builder-columns' class='form-control'>
+                                    <option value='none'>Project</option>
+                                </select>
+                            </div>
+                            <div class='form-group col-sm-4'>
+                                Location: &nbsp;<select id='builder-columns' class='form-control'>
+                                    <option selected value='none'>Location</option>
+                                </select>
+                            </div>
+                            <div class='form-group col-sm-4'>
+                                Ket Ring: &nbsp;<select id='builder-columns' class='form-control'>
+                                    <option selected value='none'>Location</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-2"></div>
+    </div>
+</div>

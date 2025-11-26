@@ -7,5 +7,7 @@ module.exports = {
 	LIB: process.env.LIB || '/usr/lib',
 	LISTENIP: process.env.LISTENIP || '0.0.0.0',
 	PORT: process.env.PORT || 3000,
-	STATEDIR: process.env.STATEDIR || '/var/node/iot-hsm/state'
+	STATEDIR: process.env.STATEDIR || '/var/node/iot-hsm/state',
+	GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS || '/var/node/iot-hsm/state/gcloud.json',
+	KMS_PKCS11_CONFIG: process.env.KMS_PKCS11_CONFIG || '/var/node/iot-hsm/state/pkcs11-kms.yml'
 }
