@@ -10,7 +10,7 @@ apt -y install curl
 curl -sL https://deb.nodesource.com/setup_24.x | bash -
 
 #Install all required software. Add ufw and openssh-server in case of a minimal install
-apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils opensc ykcs11 yubico-piv-tool ufw openssh-server
+apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils opensc ykcs11 yubico-piv-tool ufw openssh-server gnutls-bin
 
 # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
 
