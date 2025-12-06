@@ -32,6 +32,38 @@ router.get('/', function(req, res, next) {
 	});
 });
 
+router.get('/api/google/projects', function(req, res, next) {
+	gcloud.projects.get(function(err, projects) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			res.json({
+				result: 'success',
+				projects: projects.projects
+			});
+		}
+	});
+});
+
+router.get('/api/google/:project/locations', function(req, res, next) {
+	gcloud.locations.get({project: req.params.project}, function(err, locations) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			res.json({
+				result: 'success',
+				locations: locations.locations
+			});
+		}
+	});
+});
+
 router.get('/test', function(req, res, next) {
 	gcloud.projects.get(function(err, projects) {
 		if(err) {

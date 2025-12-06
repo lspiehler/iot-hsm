@@ -5,6 +5,57 @@
         checkSoftHSM2();
     }
 
+    function updateProjectList(projects) {
+        let projectSelect = document.querySelector('select[id="projects"]');
+        projectSelect.length = 0;
+        projects.forEach(function(project) {
+            let option = document.createElement('option');
+            option.value = project.projectId;
+            option.text = project.name;
+            projectSelect.appendChild(option);
+        });
+    }
+
+    function updateLocationList(locations) {
+        let locationSelect = document.querySelector('select[id="locations"]');
+        locationSelect.length = 0;
+        locations.forEach(function(location) {
+            let option = document.createElement('option');
+            option.value = location.locationId;
+            option.text = location.locationId;
+            locationSelect.appendChild(option);
+        });
+    }
+
+    function testAuth() {
+        // alert('Testing Google KMS Authentication - Not yet implemented');
+        getAPIRequest('/api/google/projects', function(err, resp) {
+            if(err) {
+                alert(err);
+            } else {
+                if(resp.result == 'success') {
+                    alert('Authentication successful! Please select the correct project, location, and key ring below.');
+                    console.log(resp.projects);
+                    updateProjectList(resp.projects);
+                    getAPIRequest('/api/google/' + resp.projects[0].projectId + '/locations', function(err, resp) {
+                        if(err) {
+                            alert(err);
+                        } else {
+                            if(resp.result == 'success') {
+                                console.log(resp.locations);
+                                updateLocationList(resp.locations);
+                            } else {
+                                alert('Authentication failed: ' + resp.error);
+                            }
+                        }
+                    });
+                } else {
+                    alert('Authentication failed: ' + resp.error);
+                }
+            }
+        });
+    }
+
 </script>
 <div style="margin-top: 20px;" class="container">
     <div class="row">
@@ -15,20 +66,45 @@
                 <h3 class="pt-4 text-center card-title">Configure Google KMS</h3>
                 <div class="card-body">
                     <form onsubmit="formHandler(); return false;" method="POST">
-                        <div class="form-inline row">
-                            <div class='form-group col-sm-4'>
-                                Project: &nbsp;<select id='builder-columns' class='form-control'>
-                                    <option value='none'>Project</option>
+                        <div class="form-group row">
+                            <div class='form-group col-1'></div>
+                            <div class='form-group col-10 text-center'>
+                                <!-- https://modus.trimble.com/components/web/file-upload-dropzone/ -->
+                                <div style="cursor: pointer; border: 2px dotted #a3a6b1; padding: 20px; border-radius: 5px;" class="my-dropzone">
+                                    <div class="dz-default dz-message">
+                                        <svg class="opacity-75" width="32" height="32" style="color: #a3a6b1;" fill="currentColor"><use xlink:href="/images/modus-solid-icons.svg#cloud-upload"/></svg>
+                                        <p>Drag and drop your JSON key file here, or click to select file to upload.</p>
+                                        <small><em>Not necessary when using Google IAM for authentication</em></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class='form-group col-1'></div>
+                        </div>
+                        <div class='form-group row'>
+                            <div class="col text-center">
+                                <button id="testauth" class="btn btn-primary" onclick="testAuth(); return false;">Test Authentication</button>
+                            </div>
+                        </div>
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label text-right">Project:</label>
+                            <div class="col-sm-4">
+                                <select id="projects" class="form-control">
                                 </select>
                             </div>
-                            <div class='form-group col-sm-4'>
-                                Location: &nbsp;<select id='builder-columns' class='form-control'>
-                                    <option selected value='none'>Location</option>
+                        </div>
+
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label text-right">Location:</label>
+                            <div class="col-sm-4">
+                                <select id="locations" class="form-control">
                                 </select>
                             </div>
-                            <div class='form-group col-sm-4'>
-                                Key Ring: &nbsp;<select id='builder-columns' class='form-control'>
-                                    <option selected value='none'>Location</option>
+                        </div>
+
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label text-right">Key Ring:</label>
+                            <div class="col-sm-4">
+                                <select id="keyrings" class="form-control">
                                 </select>
                             </div>
                         </div>
@@ -39,3 +115,18 @@
         <div class="col-2"></div>
     </div>
 </div>
+<script>
+    const dropzone = new Dropzone("div.my-dropzone", { 
+        url: "/google-auth-upload",
+        addRemoveLinks: false,
+        autoProcessQueue: true,
+        uploadMultiple: false,
+        // parallelUploads: 10,
+        dictDefaultMessage: "Choose a file or Drag and Drop",
+        dictRemoveFile: "Remove",
+        paramName: 'file',
+        method: 'post',
+        acceptedFiles: 'application/json'
+        // what to do on success/failure?
+    });
+</script>
