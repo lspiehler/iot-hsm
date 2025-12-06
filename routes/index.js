@@ -40,10 +40,19 @@ router.get('/api/google/projects', function(req, res, next) {
 				error: err.toString()
 			});
 		} else {
-			res.json({
-				result: 'success',
-				projects: projects.projects
-			});
+			// console.log(JSON.stringify(projects, null, 2));
+			if(projects.hasOwnProperty('error')) {
+				res.json({
+					result: 'error',
+					error: projects.error.message
+				});
+				return;
+			} else {
+				res.json({
+					result: 'success',
+					projects: projects.projects
+				});
+			}
 		}
 	});
 });
@@ -56,9 +65,31 @@ router.get('/api/google/:project/locations', function(req, res, next) {
 				error: err.toString()
 			});
 		} else {
+			// console.log(locations);
 			res.json({
 				result: 'success',
 				locations: locations.locations
+			});
+		}
+	});
+});
+
+router.get('/api/google/:project/:location/keyrings', function(req, res, next) {
+	gcloud.keyrings.get({project: req.params.project, location: req.params.location}, function(err, keyrings) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			// console.log(keyrings);
+			let krs = [];
+			if(keyrings.hasOwnProperty('keyRings')) {
+				krs = keyrings.keyRings;
+			}
+			res.json({
+				result: 'success',
+				keyrings: krs
 			});
 		}
 	});

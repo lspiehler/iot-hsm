@@ -5,53 +5,147 @@
         checkSoftHSM2();
     }
 
-    function updateProjectList(projects) {
-        let projectSelect = document.querySelector('select[id="projects"]');
-        projectSelect.length = 0;
-        projects.forEach(function(project) {
-            let option = document.createElement('option');
-            option.value = project.projectId;
-            option.text = project.name;
-            projectSelect.appendChild(option);
+    function updateProjectList(withanimation, callback) {
+        if(withanimation) {
+            $('#overlay').fadeIn();
+        }
+        getAPIRequest('/api/google/projects', function(err, resp) {
+            if(err) {
+                alert(err);
+                callback(err, resp);
+            } else {
+                if(resp.result == 'success') {
+                    let projectSelect = document.querySelector('select[id="projects"]');
+                    projectSelect.length = 0;
+                    resp.projects.forEach(function(project) {
+                        let option = document.createElement('option');
+                        option.value = project.projectId;
+                        option.text = project.name;
+                        projectSelect.appendChild(option);
+                    });
+                    let option = document.createElement('option');
+                    option.value = 'pkiaas';
+                    option.text = 'pkiaas';
+                    projectSelect.appendChild(option);
+                    callback(false, resp);
+                } else {
+                    alert('Authentication failed: ' + resp.error);
+                    callback(resp.error, resp);
+                }
+            }
+            if(withanimation) {
+                $('#overlay').fadeOut();
+            }
         });
     }
 
-    function updateLocationList(locations) {
+    function updateLocationList(withanimation, callback) {
+        if(withanimation) {
+            $('#overlay').fadeIn();
+        }
+        let projectSelect = document.querySelector('select[id="projects"]');
+        let selectedProject = projectSelect.value;
+        getAPIRequest('/api/google/' + selectedProject + '/locations', function(err, resp) {
+            if(err) {
+                alert(err);
+                callback(err, resp);
+            } else {
+                if(resp.result == 'success') {
+                    let locationSelect = document.querySelector('select[id="locations"]');
+                    let currentIndex = locationSelect.selectedIndex;
+                    locationSelect.length = 0;
+                    resp.locations.forEach(function(location) {
+                        let option = document.createElement('option');
+                        option.value = location.locationId;
+                        option.text = location.locationId;
+                        locationSelect.appendChild(option);
+                    });
+                    if(currentIndex > 0 && currentIndex < locationSelect.length) {
+                        locationSelect.selectedIndex = currentIndex;
+
+                    }
+                    callback(false, resp);
+                } else {
+                    alert('Authentication failed: ' + resp.error);
+                    callback(err, resp);
+                }
+            }
+            if(withanimation) {
+                $('#overlay').fadeOut();
+            }
+        });
+    }
+
+    function updateKeyRingList(withanimation, callback) {
+        if(withanimation) {
+            $('#overlay').fadeIn();
+        }
+        let projectSelect = document.querySelector('select[id="projects"]');
+        let selectedProject = projectSelect.value;
         let locationSelect = document.querySelector('select[id="locations"]');
-        locationSelect.length = 0;
-        locations.forEach(function(location) {
-            let option = document.createElement('option');
-            option.value = location.locationId;
-            option.text = location.locationId;
-            locationSelect.appendChild(option);
+        let selectedLocation = locationSelect.value;
+        getAPIRequest('/api/google/' + selectedProject + '/' + selectedLocation + '/keyrings', function(err, resp) {
+            if(err) {
+                alert(err);
+                callback(err, resp);
+            } else {
+                // console.log(resp);
+                if(resp.result == 'success') {
+                    let keyringSelect = document.querySelector('select[id="keyrings"]');
+                    keyringSelect.length = 0;
+                    resp.keyrings.forEach(function(keyring) {
+                        let option = document.createElement('option');
+                        option.value = keyring.name;
+                        option.text = keyring.name.split('/').pop();
+                        keyringSelect.appendChild(option);
+                    });
+                    callback(false, resp);
+                } else {
+                    alert('Authentication failed: ' + resp.error);
+                    callback(err, resp);
+                }
+            }
+            if(withanimation) {
+                $('#overlay').fadeOut();
+            }
+        });
+    }
+
+    function changeProject() {
+        $('#overlay').fadeIn();
+        updateLocationList(false, function(err, resp) {
+            if(err) {
+                $('#overlay').fadeOut();
+            } else {
+                updateKeyRingList(false, function(err, resp) {
+                    if(err) {
+                        // $('#overlay').fadeOut();
+                    }
+                    $('#overlay').fadeOut();
+                });
+            }
         });
     }
 
     function testAuth() {
         // alert('Testing Google KMS Authentication - Not yet implemented');
-        getAPIRequest('/api/google/projects', function(err, resp) {
+        $('#overlay').fadeIn();
+        updateProjectList(false, function(err, resp) {
             if(err) {
-                alert(err);
+                $('#overlay').fadeOut();
             } else {
-                if(resp.result == 'success') {
-                    alert('Authentication successful! Please select the correct project, location, and key ring below.');
-                    console.log(resp.projects);
-                    updateProjectList(resp.projects);
-                    getAPIRequest('/api/google/' + resp.projects[0].projectId + '/locations', function(err, resp) {
-                        if(err) {
-                            alert(err);
-                        } else {
-                            if(resp.result == 'success') {
-                                console.log(resp.locations);
-                                updateLocationList(resp.locations);
-                            } else {
-                                alert('Authentication failed: ' + resp.error);
+                updateLocationList(false, function(err, resp) {
+                    if(err) {
+                        $('#overlay').fadeOut();
+                    } else {
+                        updateKeyRingList(false, function(err, resp) {
+                            if(err) {
+                                // $('#overlay').fadeOut();
                             }
-                        }
-                    });
-                } else {
-                    alert('Authentication failed: ' + resp.error);
-                }
+                            $('#overlay').fadeOut();
+                        });
+                    }
+                });
             }
         });
     }
@@ -66,7 +160,9 @@
                 <h3 class="pt-4 text-center card-title">Configure Google KMS</h3>
                 <div class="card-body">
                     <form onsubmit="formHandler(); return false;" method="POST">
-                        <div class="form-group row">
+                        <hr/>
+                        <h5>Authenticate</h5>
+                        <div class="form-group row mt-4">
                             <div class='form-group col-1'></div>
                             <div class='form-group col-10 text-center'>
                                 <!-- https://modus.trimble.com/components/web/file-upload-dropzone/ -->
@@ -85,10 +181,12 @@
                                 <button id="testauth" class="btn btn-primary" onclick="testAuth(); return false;">Test Authentication</button>
                             </div>
                         </div>
-                        <div class="form-group row mb-2">
+                        <hr/>
+                        <h5>Select Key Ring</h5>
+                        <div class="form-group row mb-2 mt-4">
                             <label class="col-sm-2 col-form-label text-right">Project:</label>
                             <div class="col-sm-4">
-                                <select id="projects" class="form-control">
+                                <select onchange="changeProject();" id="projects" class="form-control">
                                 </select>
                             </div>
                         </div>
@@ -96,16 +194,22 @@
                         <div class="form-group row mb-2">
                             <label class="col-sm-2 col-form-label text-right">Location:</label>
                             <div class="col-sm-4">
-                                <select id="locations" class="form-control">
+                                <select onchange="updateKeyRingList(true, function() {});" id="locations" class="form-control">
                                 </select>
                             </div>
                         </div>
 
-                        <div class="form-group row mb-2">
+                        <div class="form-group row mb-4">
                             <label class="col-sm-2 col-form-label text-right">Key Ring:</label>
                             <div class="col-sm-4">
                                 <select id="keyrings" class="form-control">
                                 </select>
+                            </div>
+                        </div>
+
+                        <div class='form-group row'>
+                            <div class="col text-center">
+                                <button id="testauth" class="btn btn-primary" onclick="return false;">Check Permissions and Save</button>
                             </div>
                         </div>
                     </form>
