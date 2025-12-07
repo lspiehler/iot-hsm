@@ -12,7 +12,6 @@ const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 var pinlib = require('../lib/pin');
 const common = require('../lib/common');
-
 const gcloud = require('../lib/gcloud');
 
 /* GET home page. */
@@ -230,6 +229,26 @@ router.get('/api/gcloud/tokens', function(req, res, next) {
 			res.json({
 				tokens: tokens
 			});
+		}
+	});
+});
+
+router.post('/api/gcloud/config/update', function(req, res, next) {
+	//console.log(req.body);
+	//res.json({});
+	gcloud.config.write(req.body, function(err, resp) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'config updated successfully',
+				data: resp
+			}));
 		}
 	});
 });

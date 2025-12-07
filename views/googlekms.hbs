@@ -146,6 +146,29 @@
         });
     }
 
+    function updateConfig() {
+        $('#overlay').fadeIn();
+        let keyringSelect = document.querySelector('select[id="keyrings"]');
+        let selectedKeyRing = keyringSelect.value;
+        let config = {
+            tokens: {
+                key_ring: [selectedKeyRing]
+            }
+        };
+        postRequest('/api/gcloud/config/update', config, function(err, resp) {
+            if(err) {
+                alert(err);
+            } else {
+                if(resp.result == 'success') {
+                    alert('Configuration updated successfully.');
+                } else {
+                    alert('Error updating configuration: ' + resp.error);
+                }
+            }
+            $('#overlay').fadeOut();
+        });
+    }
+
 </script>
 <div style="margin-top: 20px;" class="container">
     <div class="row">
@@ -218,7 +241,7 @@
 
                         <div class='form-group row'>
                             <div class="col text-center">
-                                <button id="testauth" class="btn btn-primary" onclick="return false;">Check Permissions and Save</button>
+                                <button id="testauth" class="btn btn-primary" onclick="updateConfig(); return false;">Check Permissions and Save</button>
                             </div>
                         </div>
                     </form>
