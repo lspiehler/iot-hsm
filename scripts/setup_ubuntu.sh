@@ -9,8 +9,11 @@ apt -y install curl
 #Install node repos
 curl -sL https://deb.nodesource.com/setup_24.x | bash -
 
+#Update apt
+apt update
+
 #Install all required software. Add ufw and openssh-server in case of a minimal install
-apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils opensc ykcs11 yubico-piv-tool ufw openssh-server gnutls-bin
+apt -y install curl sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 apache2-utils opensc ykcs11 yubico-piv-tool ufw openssh-server gnutls-bin
 
 # apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 32CBA1A9
 
@@ -19,7 +22,7 @@ apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 ap
 # apt -y install opensc ykcs11 yubico-piv-tool
 
 #Install libkmsp11
-wget https://github.com/GoogleCloudPlatform/kms-integrations/releases/download/pkcs11-v1.8/libkmsp11-1.8-linux-amd64.tar.gz
+curl -LO https://github.com/GoogleCloudPlatform/kms-integrations/releases/download/pkcs11-v1.8/libkmsp11-1.8-linux-amd64.tar.gz
 tar xzf libkmsp11-*.tar.gz
 mkdir -p /usr/lib/kms
 mv libkmsp11-*/* /usr/lib/kms/
