@@ -139,7 +139,7 @@
 
     function configureGoogleKMSModal() {
       //$('#configureGoogleKMSModal').modal('show');
-      getAPIRequest('/api/gcloud/tokens', function(err, resp) {
+      getAPIRequest('/api/google/tokens', function(err, resp) {
         if(err) {
           //callback(resp.message, resp);
           console.log(err);

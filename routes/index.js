@@ -221,7 +221,7 @@ router.get('/googlekms', function(req, res, next) {
 	});
 });
 
-router.get('/api/gcloud/tokens', function(req, res, next) {
+router.get('/api/google/tokens', function(req, res, next) {
 	gcloud.tokens.get(function(err, tokens) {
 		if (err) {
 			res.status(400).send(err);
@@ -233,7 +233,7 @@ router.get('/api/gcloud/tokens', function(req, res, next) {
 	});
 });
 
-router.post('/api/gcloud/config/update', function(req, res, next) {
+router.post('/api/google/config/update', function(req, res, next) {
 	//console.log(req.body);
 	//res.json({});
 	gcloud.config.write(req.body, function(err, resp) {

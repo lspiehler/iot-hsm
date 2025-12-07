@@ -151,21 +151,28 @@
         let keyringSelect = document.querySelector('select[id="keyrings"]');
         let selectedKeyRing = keyringSelect.value;
         let config = {
-            tokens: {
-                key_ring: [selectedKeyRing]
-            }
+            tokens: [{
+                key_ring: selectedKeyRing
+            }]
         };
-        postRequest('/api/gcloud/config/update', config, function(err, resp) {
+        postRequest('/api/google/config/update', config, function(err, resp) {
             if(err) {
-                alert(err);
+                alert('Error updating configuration: ' + resp.message);
+                $('#overlay').fadeOut();
             } else {
-                if(resp.result == 'success') {
-                    alert('Configuration updated successfully.');
-                } else {
-                    alert('Error updating configuration: ' + resp.error);
-                }
+                $('#overlay').fadeOut();
+                alert('Updated successfully. The configuration will now reload.');
+                $('#overlay').fadeIn();
+                getAPIRequest('/api/reload', function(err, resp) {
+                    if(err) {
+                        alert(resp.message)
+                        //console.log(response);
+                    } else {
+                        // location.reload(true);
+                        $('#overlay').fadeOut();
+                    }
+                });
             }
-            $('#overlay').fadeOut();
         });
     }
 
