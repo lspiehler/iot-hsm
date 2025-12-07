@@ -18,6 +18,15 @@ apt -y install sysvbanner openssl pkcs11-provider softhsm2 nodejs git apache2 ap
 
 # apt -y install opensc ykcs11 yubico-piv-tool
 
+#Install libkmsp11
+wget https://github.com/GoogleCloudPlatform/kms-integrations/releases/download/pkcs11-v1.8/libkmsp11-1.8-linux-amd64.tar.gz
+tar xzf libkmsp11-*.tar.gz
+mkdir -p /usr/lib/kms
+mv libkmsp11-*/* /usr/lib/kms/
+chmod 755 -R /usr/lib/kms/
+chown root:root -R /usr/lib/kms/
+rm -Rf libkmsp11-*
+
 #Time zone must be set to UTC!
 timedatectl set-timezone UTC
 
