@@ -244,9 +244,16 @@
         // parallelUploads: 10,
         dictDefaultMessage: "Choose a file or Drag and Drop",
         dictRemoveFile: "Remove",
+        disablePreviews: true,
         paramName: 'file',
         method: 'post',
         acceptedFiles: 'application/json'
         // what to do on success/failure?
+    });
+    dropzone.on("success", function(file, response) {
+        alert('File uploaded successfully. Please test authentication to continue.');
+    });
+    dropzone.on("error", function(file, response) {
+        alert('Error uploading file: ' + response);
     });
 </script>
