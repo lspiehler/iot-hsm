@@ -1,6 +1,6 @@
 node_modules
 test
-#.env
+.env
 snap
 parts
 *.snap
