@@ -6,7 +6,9 @@
     <script src="/javascripts/ajax.js"></script>
     <script src="/js/jquery/jquery.min.js"></script>
     <script src="/js/bootstrap/bootstrap.bundle.min.js"></script>
+    <script src="/js/dropzone/dropzone.min.js"></script>
     <link href="/css/bootstrap/bootstrap.min.css" rel="stylesheet">
+    <link href="/js/dropzone/dropzone.min.css" rel="stylesheet">
     <script>
       var iot = {{{iotstring}}}
       //console.log(iot);
@@ -135,6 +137,19 @@
         }
     }
 
+    function configureGoogleKMSModal() {
+      //$('#configureGoogleKMSModal').modal('show');
+      getAPIRequest('/api/google/tokens', function(err, resp) {
+        if(err) {
+          //callback(resp.message, resp);
+          console.log(err);
+          console.log(resp);
+        } else {
+          console.log(resp);
+        }
+      });
+    }
+
     function changeDefault(elem, type) {
       console.log(type);
       if(type == 'sopin') {
@@ -162,6 +177,9 @@
               <li id="createsofthsm2" class="nav-item active">
                   <a class="nav-link" href="javascript: createHSMModal();">Create SoftHSM2</a>
               </li>
+              <li id="configureGoogleKMS" class="nav-item active">
+                  <a class="nav-link" href="/googlekms">Configure Google KMS</a>
+              </li>
               <!--<li class="nav-item active">
                   <a class="nav-link" href="/about-us">Update PINs</a>
               </li>-->
@@ -182,11 +200,11 @@
         <br/>
         Processing...
     </div>
-    <!--<div class="modal fade" id="createSoftHSM2SlotModal" tabindex="-1" role="dialog" aria-labelledby="createSoftHSM2SlotModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
+    <div class="modal fade" id="configureGoogleKMSModal" tabindex="-1" role="dialog" aria-labelledby="configureGoogleKMSModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="createSoftHSM2SlotModalLabel">Create a SoftHSM2 Slot</h5>
+                <h5 class="modal-title" id="configureGoogleKMSModalLabel">Configure Google KMS</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
                 </button>
@@ -198,15 +216,17 @@
                       <input type="text" class="form-control" id="createSoftHSM2SlotInputLabel" name="createSoftHSM2SlotInputLabel" aria-describedby="createSoftHSM2SlotInputHelp" placeholder="SoftHSM2 Label Name">
                       <small id="createSoftHSM2SlotInputHelp" class="form-text text-muted">Enter a friendly name for your SoftHSM2 Slot</small>
                   </div>
-                  <div class="form-group">
-                      <label for="createSoftHSM2SlotInputSOPin">SO PIN</label>
-                      <input onclick="changeDefault(this, 'sopin');" type="text" class="form-control" id="createSoftHSM2SlotInputSOPin" name="createSoftHSM2SlotInputSOPin" readonly aria-describedby="createSoftHSM2SlotInputSOPinHelp" value="(Click to change default)">
-                      <small id="createSoftHSM2SlotInputSOPinHelp" class="form-text text-muted">Enter the security officer PIN</small>
-                  </div>
-                  <div class="form-group">
-                      <label for="createSoftHSM2SlotInputPin">User PIN</label>
-                      <input onclick="changeDefault(this, 'userpin');" type="text" class="form-control" id="createSoftHSM2SlotInputPin" name="createSoftHSM2SlotInputPin" readonly aria-describedby="createSoftHSM2SlotInputPinHelp" value="(Click to change default)" placeholder="">
-                      <small id="createSoftHSM2SlotInputPinHelp" class="form-text text-muted">Enter the user PIN</small>
+                  <div class="form-inline row">
+                    <div class='form-group col-sm-4'>
+                      <select id='builder-columns' class='form-control'>
+                        <option value='none'>Project</option>
+                      </select>
+                    </div>
+                    <div class='form-group col-sm-4'>
+                      <select id='builder-columns' class='form-control'>
+                        <option selected value='none'>Location</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 <div class="modal-footer">
@@ -216,6 +236,6 @@
             </form>
             </div>
         </div>
-    </div>-->
+    </div>
   </body>
 </html>

@@ -1,0 +1,80 @@
+<script>
+    var slots = {{{slotstring}}}
+
+    window.onload = function() {
+        checkSoftHSM2();
+        var select = document.getElementById("objectid");
+        for(var i = 0; i < slots.slots.length; i++) {
+            if(slots.slots[i]['token manufacturer'] == 'Google') {
+                let objects = Object.keys(slots.slots[i].objects);
+                console.log(objects);
+                for(let j = 0; j < objects.length; j++) {
+                    console.log('Adding option for ' + objects[j]);
+                    if(slots.slots[i].objects[objects[j]].hasOwnProperty('Certificate Object') == false) {
+                        var option = document.createElement("option");
+                        option.text = objects[j];
+                        option.value = objects[j];
+                        select.add(option);
+                    }
+                }
+            }
+        }
+    }
+
+    function formHandler() {
+        let submitbtn = document.getElementById('submitbtn');
+        let selectobjectid = document.getElementById('objectid');
+        let objectid = selectobjectid.options[selectobjectid.selectedIndex].value;
+
+        submitbtn.disabled = true;
+
+        window.location = '/wizard/provision/{{serial}}/' + objectid;
+    }
+</script>
+<div style="margin-top: 20px;" class="container">
+    <div class="row">
+        <div class="col-2"></div>
+        <div class="col-8 mx-auto">
+            <div class="shadow-lg card" style="width: 100%;">
+                <!--<img class="card-img-top" alt="{{this.[token model]}}">-->
+                <h3 class="pt-4 text-center card-title">Provision a Slot</h3>
+                <div class="card-body">
+                    <form onsubmit="formHandler(); return false;" method="POST">
+                        <div class="form-group">
+                            <label for="objectid">Choose an available slot:</label>
+                            <select class="form-control" id="objectid" name="objectid">
+                            </select>
+                        </div>
+                        <div class="text-center form-group">
+                            <input id="submitbtn" type="submit" class="text-center btn btn-primary" value="Provision" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-2"></div>
+    </div>
+</div>
+<div id="privatekeymodal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Paste Your Private Key</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="privatekey">Private Key</label>
+                <textarea class="form-control" id="privatekey" rows="10"></textarea>
+                <small id="privatekeyhelp" class="form-text text-muted">*Note: Currently, only unencrypted private keys are supported.</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Save</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+        </div>
+    </div>
+</div>

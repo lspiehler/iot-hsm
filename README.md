@@ -1,12 +1,12 @@
 # IoT-HSM
 IoT-HSM allows Yubikeys and SoftHSM2 devices to be managed and serve as an "IoT HSM" interface for signing operations from [PKIaaS.io](https://www.pkiaas.io/iot-hsm).
 
-## Install IoT-HSM on Ubuntu 25.10
-The following commands should be run as root on a base install of [Ubuntu 25.10](https://ubuntu.com/download/server). You can switch to the root user using the "su" command or "sudo su -"
+## Install IoT-HSM on Ubuntu 24.04 or 25.10
+The following commands should be run as root on a base install of Ubuntu 24.04 or Ubuntu 25.10. You can switch to the root user using the "su" command or "sudo su -"
 ```
 apt update
 apt -y install curl
-curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu2510.sh | bash -
+curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu.sh | bash -
 ```
 
 You should now be able to login and begin managing your HSM by navigating to https://youripaddress
@@ -23,7 +23,7 @@ systemctl reload apache2
 
 ## Docker Command
 ```
-docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens lspiehler/iot-hsm:latest
+docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state lspiehler/iot-hsm:latest
 ```
 
 ## Snap Build

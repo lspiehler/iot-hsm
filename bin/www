@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+process.env.KMS_PKCS11_CONFIG = '/var/node/iot-hsm/state/pkcs11-kms.yml';
+
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
 var IoTHSM = require('../lib/IoTHSM');
+var state = require('../lib/statelib');
 
 var server;
 var debug = require('debug')('pkcs11iot:server');

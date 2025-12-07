@@ -11,6 +11,8 @@ const wizardimport = require('../api/wizard-import');
 const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 var pinlib = require('../lib/pin');
+const common = require('../lib/common');
+const gcloud = require('../lib/gcloud');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -26,6 +28,109 @@ router.get('/', function(req, res, next) {
 				//console.log(iot);
 				res.render('index', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 			}
+		}
+	});
+});
+
+router.get('/api/google/projects', function(req, res, next) {
+	gcloud.projects.get(function(err, projects) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			// console.log(JSON.stringify(projects, null, 2));
+			if(projects.hasOwnProperty('error')) {
+				res.json({
+					result: 'error',
+					error: projects.error.message
+				});
+				return;
+			} else {
+				res.json({
+					result: 'success',
+					projects: projects.projects
+				});
+			}
+		}
+	});
+});
+
+router.get('/api/google/:project/locations', function(req, res, next) {
+	gcloud.locations.get({project: req.params.project}, function(err, locations) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			// console.log(locations);
+			res.json({
+				result: 'success',
+				locations: locations.locations
+			});
+		}
+	});
+});
+
+router.get('/api/google/:project/:location/keyrings', function(req, res, next) {
+	gcloud.keyrings.get({project: req.params.project, location: req.params.location}, function(err, keyrings) {
+		if(err) {
+			res.json({
+				result: 'error',
+				error: err.toString()
+			});
+		} else {
+			// console.log(keyrings);
+			let krs = [];
+			if(keyrings.hasOwnProperty('keyRings')) {
+				krs = keyrings.keyRings;
+			}
+			res.json({
+				result: 'success',
+				keyrings: krs
+			});
+		}
+	});
+});
+
+router.get('/test', function(req, res, next) {
+	gcloud.projects.get(function(err, projects) {
+		if(err) {
+			res.status(400).send(err);
+		} else {
+			// console.log(projects.projects[0].name);
+			gcloud.locations.get({project: projects.projects[0].name}, function(err, locations) {
+				if(err) {
+					res.status(400).send(err);
+				} else {
+					let validlocations = [];
+					for(let i = 0; i <= locations.locations.length - 1; i++) {
+						if(locations.locations[i].metadata.hsmAvailable) {
+							validlocations.push(locations.locations[i].locationId);
+						}
+					}
+					gcloud.keyrings.get({project: projects.projects[0].name, location: 'us-east1'}, function(err, keyrings) {
+						if(err) {
+							res.status(400).send(err);
+						} else {
+							gcloud.tokens.get(function(err, tokens) {
+								if (err) {
+									res.status(400).send(err);
+								} else {
+									res.json({
+										projects: projects,
+										locations: validlocations,
+										keyrings: keyrings,
+										tokens: tokens
+									});
+								}
+							});
+						}
+					});
+				}
+			});
 		}
 	});
 });
@@ -55,12 +160,24 @@ router.get('/getCert', function(req, res, next) {
 
 router.get('/wizard/key/:serial', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
-		//console.log(slots);
+		// console.log(slots);
 		if(err) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
 			res.render('wizard/key', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/wizard/google/:serial', function(req, res, next) {
+	slotlib.getSlots(false, function(err, slots) {
+		// console.log(slots);
+		if(err) {
+			res.status(400).send(err);
+		} else {
+			let iot = iothsm.getSlots();
+			res.render('wizard/google', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -73,6 +190,65 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 		} else {
 			let iot = iothsm.getSlots();
 			res.render('wizard/choices', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+		}
+	});
+});
+
+router.get('/googlekms', function(req, res, next) {
+	var options = {
+		host: 'metadata.google.internal',
+		port: 80,
+		method: 'GET'
+	}
+
+	let gcp = false;
+
+	common.request({protocol: 'http', options: options}, function(err, resp) {
+		if(err) {
+			gcp = false;
+		} else {
+			gcp = true;
+		}
+		slotlib.getSlots(false, function(err, slots) {
+			//console.log(slots);
+			if(err) {
+				res.status(400).send(err);
+			} else {
+				let iot = iothsm.getSlots();
+				res.render('googlekms', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots), gcp: gcp });
+			}
+		});
+	});
+});
+
+router.get('/api/google/tokens', function(req, res, next) {
+	gcloud.tokens.get(function(err, tokens) {
+		if (err) {
+			res.status(400).send(err);
+		} else {
+			res.json({
+				tokens: tokens
+			});
+		}
+	});
+});
+
+router.post('/api/google/config/update', function(req, res, next) {
+	//console.log(req.body);
+	//res.json({});
+	gcloud.config.write(req.body, function(err, resp) {
+		if(err) {
+			res.json(apiResponse.create({
+				success: false,
+				message: err,
+				data: {}
+			}));
+		} else {
+			res.json(apiResponse.create({
+				success: true,
+				message: 'config updated successfully',
+				data: resp
+			}));
 		}
 	});
 });
