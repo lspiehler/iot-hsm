@@ -11,6 +11,7 @@ const wizardimport = require('../api/wizard-import');
 const clearslot = require('../api/clearSlot');
 var title = 'IoT-HSM';
 var pinlib = require('../lib/pin');
+const common = require('../lib/common');
 
 const gcloud = require('../lib/gcloud');
 
@@ -195,14 +196,29 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 });
 
 router.get('/googlekms', function(req, res, next) {
-	slotlib.getSlots(false, function(err, slots) {
-		//console.log(slots);
+	var options = {
+		host: 'metadata.google.internal',
+		port: 80,
+		method: 'GET'
+	}
+
+	let gcp = false;
+
+	common.request({protocol: 'http', options: options}, function(err, resp) {
 		if(err) {
-			res.status(400).send(err);
+			gcp = false;
 		} else {
-			let iot = iothsm.getSlots();
-			res.render('googlekms', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+			gcp = true;
 		}
+		slotlib.getSlots(false, function(err, slots) {
+			//console.log(slots);
+			if(err) {
+				res.status(400).send(err);
+			} else {
+				let iot = iothsm.getSlots();
+				res.render('googlekms', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots), gcp: gcp });
+			}
+		});
 	});
 });
 
