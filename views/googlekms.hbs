@@ -23,10 +23,6 @@
                         option.text = project.name;
                         projectSelect.appendChild(option);
                     });
-                    let option = document.createElement('option');
-                    option.value = 'pkiaas';
-                    option.text = 'pkiaas';
-                    projectSelect.appendChild(option);
                     callback(false, resp);
                 } else {
                     alert('Authentication failed: ' + resp.error);
@@ -164,13 +160,12 @@
                         <h5>Authenticate</h5>
                         <div class="form-group row mt-4">
                             <div class='form-group col-1'></div>
-                            {{#if gcp}}
-                                <div class='form-group col-10'>
+                                <div style="display:{{#if gcp}}block;{{else}}none;{{/if}}" class='form-group col-10'>
                                     <p>IoT-HSM has detected that it is running on Google Cloud Platform. Please ensure the following prerequisites are met before testing authentication:</p>
                                     <ul>
-                                        <li>Enable the "Cloud Resource Manager API" is enabled for the project</li>
+                                        <li>Enable the "Cloud Resource Manager" API is enabled for the project</li>
                                         <li>Ensure the "Cloud Platform" API access scope is enabled for the virtual machine</li>
-                                        <li>Ensure the service account assigned to this instance has the following roles:</li>
+                                        <li>Ensure the service account assigned to this virtual machine has the following roles:</li>
                                         <ul>
                                             <li>Cloud KMS Crypto Operator</li>
                                             <li>Cloud KMS CryptoKey Signer/Verifier</li>
@@ -178,8 +173,7 @@
                                         </ul>
                                     </ul>
                                 </div>
-                            {{else}}
-                                <div class='form-group col-10 text-center'>
+                                <div style="display:{{#if gcp}}none;{{else}}block;{{/if}}" class='form-group col-10 text-center'>
                                     <!-- https://modus.trimble.com/components/web/file-upload-dropzone/ -->
                                     <div style="cursor: pointer; border: 2px dotted #a3a6b1; padding: 20px; border-radius: 5px;" class="my-dropzone">
                                         <div class="dz-default dz-message">
@@ -189,7 +183,6 @@
                                         </div>
                                     </div>
                                 </div>
-                            {{/if}}
                             <div class='form-group col-1'></div>
                         </div>
                         <div class='form-group row'>
