@@ -176,7 +176,7 @@
                                     cell0.innerText = objectprops[m];
                                     let cell1 = row0.insertCell(1);
                                     cell1.className = objectprops[m];
-                                    if(objectprops[m]=='certinfo') {
+                                    if(objectprops[m]=='certinfo' || objectprops[m]=='private_key') {
                                         cell1.innerHTML = '<pre>' + JSON.stringify(slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]], null, '\t') + '</pre>';
                                     } else {
                                         cell1.innerText = slots.slots[i].objects[slotobjects[j]][types[k]][l][objectprops[m]];
