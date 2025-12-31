@@ -2,6 +2,7 @@ FROM docker.io/ubuntu:noble
 LABEL maintainer="Lyas Spiehler"
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV NO_COLOR=1
 
 ENV TZ=UTC
 
