@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-process.env.KMS_PKCS11_CONFIG = '/var/node/iot-hsm/state/pkcs11-kms.yml';
+process.env.KMS_PKCS11_CONFIG = '/var/node/iot-hsm/tmp/pkcs11-kms.yml';
 
 var config = require('../config');
 var slotlib = require('../lib/slotlib');
