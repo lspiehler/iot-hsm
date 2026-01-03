@@ -26,7 +26,7 @@ router.get('/', function(req, res, next) {
 			} else {
 				let iot = iothsm.getSlots();
 				//console.log(iot);
-				res.render('index', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+				res.render('index', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 			}
 		}
 	});
@@ -139,7 +139,7 @@ router.get('/initializing', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		if(slots.state == 'initializing') {
 			let iot = iothsm.getSlots();
-			res.render('initializing', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+			res.render('initializing', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 		} else {
 			res.redirect('/');
 		}
@@ -150,7 +150,7 @@ router.get('/expert', function(req, res, next) {
 	slotlib.getSlots(false, function(err, slots) {
 		//console.log(slots);
 		let iot = iothsm.getSlots();
-		res.render('expert', { title: title, iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
+		res.render('expert', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), slots: slots, slotstring: JSON.stringify(slots) });
 	});
 });
 
@@ -165,7 +165,7 @@ router.get('/wizard/key/:serial', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
-			res.render('wizard/key', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
+			res.render('wizard/key', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -177,7 +177,7 @@ router.get('/wizard/google/:serial', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
-			res.render('wizard/google', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
+			res.render('wizard/google', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -189,7 +189,7 @@ router.get('/wizard/provision/:serial/:slotid', function(req, res, next) {
 			res.status(400).send(err);
 		} else {
 			let iot = iothsm.getSlots();
-			res.render('wizard/choices', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
+			res.render('wizard/choices', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots) });
 		}
 	});
 });
@@ -215,7 +215,7 @@ router.get('/googlekms', function(req, res, next) {
 				res.status(400).send(err);
 			} else {
 				let iot = iothsm.getSlots();
-				res.render('googlekms', { title: title, iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots), gcp: gcp });
+				res.render('googlekms', { title: title, year: new Date().getFullYear(),iot: iot, iotstring: JSON.stringify(iot), serial: req.params.serial, slotid: req.params.slotid, slotstring: JSON.stringify(slots), gcp: gcp });
 			}
 		});
 	});
