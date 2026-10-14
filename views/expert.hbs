@@ -526,10 +526,12 @@
         let keyPairIDSelect = document.getElementById('keyPairIDSelect');
         let keyPairKeySelect = document.getElementById('keyPairKeySelect');
         let loginTypeSelect = document.getElementById('loginTypeSelect');
+        let signpin = document.getElementById('keyPairInputSignPin');
 
         postRequest('/api/pkcs11/generatekey', {
                 label: label.value,
                 pin: pin.value,
+                signpin: signpin.value,
                 slotid: keypairgenslotid.value,
                 serial: keypairgenserial.value,
                 module: keypairgenmodule.value,
@@ -638,6 +640,11 @@
                             <label for="keyPairInputPin">PIN</label>
                             <input type="password" class="form-control" id="keyPairInputPin" name="keyPairInputPin" aria-describedby="keyPairInputPinHelp" value="{{sopin}}" placeholder="">
                             <small id="keyPairInputPinHelp" class="form-text text-muted">Enter either the user or security officer PIN, depending on the HSM requirements</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="keyPairInputSignPin">User PIN</label>
+                            <input type="password" class="form-control" id="keyPairInputSignPin" name="keyPairInputSignPin" aria-describedby="keyPairInputSignPinHelp" value="{{userpin}}" placeholder="">
+                            <small id="keyPairInputSignPinHelp" class="form-text text-muted">With the security officer login, enter the user PIN to create the temporary certificate for the new key</small>
                         </div>
                 </div>
                 <div class="modal-footer">
