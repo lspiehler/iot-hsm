@@ -22,8 +22,9 @@ systemctl reload apache2
 ```
 
 ## Docker Command
+The web interface has no authentication of its own and can use every key on the HSM. Only expose it through a reverse proxy that requires a login and HTTPS, like the Apache configuration created by the Ubuntu install above. The command below publishes it on 127.0.0.1 only.
 ```
-docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state ghcr.io/lspiehler/iot-hsm:latest
+docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 127.0.0.1:3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state ghcr.io/lspiehler/iot-hsm:latest
 ```
 
 ## Snap Build
@@ -43,9 +44,9 @@ Reinstall dependencies
 ```
 apt install opensc pkcs11-provider ykcs11 softhsm2 yubico-piv-tool
 ```
-Run manually, specifying environment variables
+Run manually, specifying environment variables (LISTENIP=0.0.0.0 makes the unauthenticated web interface reachable from the network)
 ```
-LISTENIP=0.0.0.0 PORT=3001 PLATFORMFQDN=pkiaas.io node bin/www
+LISTENIP=127.0.0.1 PORT=3001 PLATFORMFQDN=pkiaas.io node bin/www
 ```
 
 ```
