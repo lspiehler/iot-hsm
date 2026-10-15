@@ -27,13 +27,6 @@ The web interface has no authentication of its own and can use every key on the 
 docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 127.0.0.1:3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state ghcr.io/lspiehler/iot-hsm:latest
 ```
 
-## Snap Build
-```
-apt install -y snapd
-snap install snapcraft --classic
-snapcraft
-```
-
 ### Troubleshooting
 Uninstall dependencies
 ```
