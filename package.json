@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@google-cloud/kms": "6.2.1",
     "base64url": "^3.0.1",
     "bootstrap": "^4.6.2",
     "cookie-parser": "~1.4.4",

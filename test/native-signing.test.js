@@ -1,13 +1,13 @@
-// Live check for native signing (node-pki-signer) on a real token. Each request is signed twice with
-// the same key: by slotlib.signCSR, which runs OpenSSL through node-openssl-cert2, and by node-pki-signer
-// with the parameters slotlib builds. The two certificates must be identical apart from the serial number
-// and the signature value, and node-pki-signer must have signed natively.
+// Live check for native signing (NATIVESIGNING, node-pki-signer) on a real token. Each request is signed
+// twice with the same key by slotlib.signCSR: once as before, running OpenSSL through node-openssl-cert2,
+// and once with NATIVESIGNING on. The two certificates must be identical apart from the serial number and
+// the signature value, and node-pki-signer must have signed natively (no fallback logged).
 //
 // Runs only when the LIVE_* variables are set, as the agent's user on a device with the token:
 //   PKCS#11 (YubiKey, SoftHSM): LIVE_PKCS11_MODULE, LIVE_PKCS11_SERIAL, LIVE_PKCS11_OBJECTID,
 //     LIVE_PKCS11_CA (the CA certificate's PEM file), LIVE_PKCS11_PIN
-//   Google Cloud KMS: LIVE_KMS_OBJECTID, LIVE_KMS_CA, LIVE_KMS_KEY_VERSION, GOOGLE_APPLICATION_CREDENTIALS,
-//     and @google-cloud/kms installed beside node-pki-signer; LIVE_KMS_SERIAL (default 0000000000000000)
+//   Google Cloud KMS: LIVE_KMS_OBJECTID, LIVE_KMS_CA, GOOGLE_APPLICATION_CREDENTIALS, KMS_PKCS11_CONFIG;
+//     LIVE_KMS_SERIAL (default 0000000000000000). The key version is found from KMS_PKCS11_CONFIG's key rings.
 // Every KMS case costs two asymmetricSign calls, so the KMS suite runs only a few cases.
 // The certificates it signs are thrown away, and the PIN is never printed.
 const test = require('node:test');
@@ -22,10 +22,11 @@ const { promisify } = require('node:util');
 // slotlib reads the CA key's allowed mechanisms from the state; an empty state gives sha256, as for the
 // YubiKey and KMS keys the agent holds
 process.env.STATEDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'native-signing-state-'));
+const config = require('../config');
 const slotlib = require('../lib/slotlib');
 const openssl2 = require('../lib/openssl2');
 const common = require('../lib/common');
-const { createSigner, shadowCASignCSR } = require('node-pki-signer');
+const { shadowCASignCSR } = require('node-pki-signer');
 
 const run = promisify(execFile);
 const signCSR = promisify(slotlib.signCSR);
@@ -142,7 +143,7 @@ const cases = {
 };
 
 /** The parameters slotlib.signCSR passes node-openssl-cert2, for the same token and request. */
-function nativeParams(token, csr, options) {
+function signParams(token, csr, options) {
     const mup = common.moduleURIParam(token.module);
     return {
         csr,
@@ -154,40 +155,53 @@ function nativeParams(token, csr, options) {
             pin: token.pin,
             modulePath: token.module,
         },
-        ...(token.keyVersion ? { kms: { keyVersion: token.keyVersion } } : {}),
     };
+}
+
+/** slotlib.signCSR with NATIVESIGNING set to `native`, and what the agent logged about native signing. */
+async function slotlibSignCSR(token, csr, options, native) {
+    config.NATIVESIGNING = native;
+    const logged = [];
+    const log = console.log;
+    console.log = (...args) => {
+        if (String(args[0]).startsWith('Native signing')) logged.push(args.join(' '));
+        log(...args);
+    };
+    try {
+        const cert = await signCSR({
+            publiccert: token.ca, csr, options, module: token.module,
+            serial: token.serial, pin: token.pin, objectid: token.objectid,
+        });
+        return { cert, logged };
+    } finally {
+        console.log = log;
+        config.NATIVESIGNING = false;
+    }
 }
 
 function suite(name, token, caseNames) {
     test.describe(name, { skip: token ? false : 'LIVE_* variables not set' }, () => {
-        const fallbacks = [];
-        const signer = createSigner({ onFallback: (fallback) => fallbacks.push(fallback.reason) });
-        test.after(() => signer.close());
-
         for (const caseName of caseNames) {
             test(caseName, async () => {
                 const c = cases[caseName];
                 const csr = await newCSR(c.subject);
                 const options = c.options();
-                // the agent's own path: slotlib.signCSR with OpenSSL
-                const reference = await signCSR({
-                    publiccert: token.ca, csr, options: structuredClone(options), module: token.module,
-                    serial: token.serial, pin: token.pin, objectid: token.objectid,
-                });
-                fallbacks.length = 0;
-                const params = nativeParams(token, csr, structuredClone(options));
-                const candidate = await signer.caSignCSR(params);
-                assert.deepEqual(fallbacks, [], 'node-pki-signer fell back to OpenSSL');
-                assert.equal(candidate.signedBy, 'native');
+                // the agent's path as before: slotlib.signCSR with OpenSSL
+                const reference = await slotlibSignCSR(token, csr, structuredClone(options), false);
+                assert.deepEqual(reference.logged, []);
+                // the same with NATIVESIGNING on
+                const candidate = await slotlibSignCSR(token, csr, structuredClone(options), '1');
+                assert.deepEqual(candidate.logged, [], 'native signing fell back to OpenSSL');
 
                 const ca = new X509Certificate(token.ca);
-                assert.ok(new X509Certificate(candidate.data).verify(ca.publicKey), 'native signature verifies with the CA');
+                assert.ok(new X509Certificate(candidate.cert).verify(ca.publicKey), 'native signature verifies with the CA');
                 // node-pki-signer rebuilds the OpenSSL certificate's TBS byte for byte from the same parameters
-                const rebuilt = await shadowCASignCSR(nativeParams(token, csr, structuredClone(options)), reference);
+                const rebuilt = await shadowCASignCSR(signParams(token, csr, structuredClone(options)), reference.cert);
                 assert.equal(rebuilt.signature, 'valid', 'OpenSSL certificate verifies with the CA');
                 assert.equal(rebuilt.outcome, 'match', JSON.stringify(rebuilt.fields ?? rebuilt.detail));
-                // and its own certificate is that TBS with its own serial number
-                const own = await shadowCASignCSR(nativeParams(token, csr, structuredClone(options)), candidate.data);
+                // and the native certificate is that TBS with its own serial number
+                const own = await shadowCASignCSR(signParams(token, csr, structuredClone(options)), candidate.cert);
+                assert.equal(own.signature, 'valid', 'native certificate verifies with the CA');
                 assert.equal(own.outcome, 'match', JSON.stringify(own.fields ?? own.detail));
             });
         }
@@ -201,10 +215,10 @@ const pkcs11 = env.LIVE_PKCS11_MODULE && env.LIVE_PKCS11_SERIAL && env.LIVE_PKCS
         ca: fs.readFileSync(env.LIVE_PKCS11_CA, 'utf8'), pin: env.LIVE_PKCS11_PIN,
     }
     : false;
-const kms = env.LIVE_KMS_OBJECTID && env.LIVE_KMS_CA && env.LIVE_KMS_KEY_VERSION
+const kms = env.LIVE_KMS_OBJECTID && env.LIVE_KMS_CA
     ? {
         module: KMS_MODULE, serial: env.LIVE_KMS_SERIAL || '0000000000000000', objectid: env.LIVE_KMS_OBJECTID,
-        ca: fs.readFileSync(env.LIVE_KMS_CA, 'utf8'), pin: 'unused', keyVersion: env.LIVE_KMS_KEY_VERSION,
+        ca: fs.readFileSync(env.LIVE_KMS_CA, 'utf8'), pin: 'unused',
     }
     : false;
 
