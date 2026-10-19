@@ -114,6 +114,18 @@ const cases = {
             ...dates(30),
         }),
     },
+    'subject order and attributes of node-openssl-cert2 0.7.39': {
+        subject: '/C=US/CN=x',
+        options: () => ({
+            subject: {
+                unstructuredAddress: '1 Main St', unstructuredName: 'device-01', organizationIdentifier: 'VATUS-12345',
+                commonName: 'Ada Lovelace', organizationalUnitName: 'People', givenName: 'Ada', surname: 'Lovelace',
+                organizationName: 'Example Org', countryName: 'US', domainComponent: ['example', 'com'],
+            },
+            extensions: { basicConstraints: { critical: true, CA: false } },
+            ...dates(30),
+        }),
+    },
     'non-ASCII subject, SANs and UPN': {
         subject: '/C=US/CN=x',
         options: () => ({
