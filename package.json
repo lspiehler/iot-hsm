@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@google-cloud/kms": "6.2.1",
     "base64url": "^3.0.1",
     "bootstrap": "^4.6.2",
     "cookie-parser": "~1.4.4",
@@ -26,6 +27,7 @@
     "multer": "^2.0.2",
     "node-openssl-cert": "^0.1.40",
     "node-openssl-cert2": "^0.7.39",
+    "node-pki-signer": "0.3.5",
     "pubnub": "^13.0.3",
     "uuid": "^11.1.1",
     "yaml": "^2.8.1",
