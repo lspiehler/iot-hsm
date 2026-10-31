@@ -159,3 +159,21 @@ test('the signed offer carries the fields next to the ones the platform reads', 
     assert.equal(signed.token.type, 'yubikey');
     assert.deepEqual(signed.capabilities.signTypes, ['csr', 'cms', 'crl']);
 });
+
+test('an error in the details still sends the offer, without them', async function() {
+    let ca = caEntry();
+    // a CA entry a future change could break the details with
+    Object.defineProperty(ca, 'token flags', { get: function() { throw new Error('broken'); } });
+    iot.setCerts([ca]);
+    sent.length = 0;
+    let solicit = { serial: '0102', thumbprint: 'aabb', siguuid: 'sig-2' };
+    let err = await new Promise(function(resolve) {
+        iot.messageReceived({ publisher: 'platform', channel: 'channel-id-1', message: { type: 'solicit signature', ttl: 10, smime: JSON.stringify(solicit) } }, resolve);
+    });
+    assert.equal(err, false);
+    assert.equal(sent.length, 1);
+    let signed = JSON.parse(sent[0].signed);
+    assert.equal(signed.caindex, 0);
+    assert.equal(signed.subjectEscaping, true);
+    assert.equal(signed.agent, undefined);
+});
