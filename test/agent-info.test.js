@@ -36,7 +36,7 @@ iotmod._compile(fs.readFileSync(iotfile, 'utf8') + `
 verifyMessage = function(smime, callback) { callback(false, {data: Buffer.from(smime)}); };
 sendSignedMessage = function(params, callback) { module.exports.__sent.push(params); callback(false, {}); };
 pubnub = { getUUID: function() { return 'agent-uuid'; } };
-module.exports.__t = { messageReceived: messageReceived, setCerts: function(c) { certs = c; } };`, iotfile);
+module.exports.__t = { messageReceived: messageReceived, setCerts: function(c) { certs = c; }, getQueue: getQueue, setBadpin: function(b) { badpin = b; } };`, iotfile);
 iotmod.exports.__sent = sent;
 const iot = iotmod.exports.__t;
 
@@ -61,7 +61,9 @@ const caEntry = function(params) {
         certinfo: { attributes: { 'Serial Number': '01:02', 'Thumbprint': 'aa:bb' } },
         'token serial': '10101010',
         'token label': 'Test CA token',
-        'token flags': ['rng', 'login required', 'PIN initialized', 'token initialized'],
+        // as pkcs11-tool --list-slots reported them for a YubiKey 5 on the user's appliance
+        'token flags': ['login required', 'rng', 'token initialized', 'PIN initialized'],
+        'token flags read': '2026-10-31T16:00:00.000Z',
         module: YUBIKEY,
         pin: 'Sup3rSecretPin',
         channel: { id: 'channel-id-1', key: { base64: 'not a key', pass: '123456' } }
@@ -102,20 +104,23 @@ test('capabilities: native signing, the request kinds and the algorithm of the C
     let capabilities = agentinfo.offerFields(caEntry()).capabilities;
     assert.equal(capabilities.nativeSigning, false);
     assert.deepEqual(capabilities.signTypes, ['csr', 'cms', 'crl']);
-    assert.deepEqual(capabilities.algorithm, { hash: 'sha256', key: 'rsa', bits: 2048 });
+    assert.deepEqual(capabilities.algorithm, { key: 'rsa', bits: 2048, certificateHash: 'sha256' });
     // a Google KMS key allows one hash
     let kms = agentinfo.offerFields(caEntry({ base64: ecca, module: KMS, 'token flags': ['token initialized'], private_key: { 'Allowed mechanisms': 'ECDSA-SHA384' } }));
-    assert.deepEqual(kms.capabilities.algorithm, { hash: 'sha384', key: 'ec', curve: 'secp384r1' });
+    assert.deepEqual(kms.capabilities.algorithm, { key: 'ec', curve: 'secp384r1', certificateHash: 'sha384' });
     // an unreadable CA certificate leaves the algorithm out
     assert.equal(agentinfo.offerFields(caEntry({ base64: 'not a certificate' })).capabilities.algorithm, undefined);
 });
 
 test('token: its type and the PIN state from the token flags', function() {
     let token = function(params) { return agentinfo.offerFields(caEntry(params)).token; };
-    assert.deepEqual(token(), { type: 'yubikey', pinState: 'ok' });
+    const read = '2026-10-31T16:00:00.000Z';
+    assert.deepEqual(token(), { type: 'yubikey', pinState: 'ok', pinStateRead: read });
     assert.deepEqual(token({ module: KMS, 'token flags': ['token initialized'] }), { type: 'google' });
-    assert.deepEqual(token({ module: '/usr/lib/softhsm/libsofthsm2.so' }), { type: 'softhsm', pinState: 'ok' });
-    assert.deepEqual(token({ module: '/opt/vendor/libother.so' }), { type: 'unknown', pinState: 'ok' });
+    assert.deepEqual(token({ module: '/usr/lib/softhsm/libsofthsm2.so' }), { type: 'softhsm', pinState: 'ok', pinStateRead: read });
+    assert.deepEqual(token({ module: '/opt/vendor/libother.so' }), { type: 'unknown', pinState: 'ok', pinStateRead: read });
+    // a PIN the agent's login failed with is the state now, not as of the slot listing
+    assert.deepEqual(agentinfo.offerFields(caEntry(), { badpin: true }).token, { type: 'yubikey', pinState: 'rejected' });
     assert.deepEqual(token({ 'token flags': undefined }), { type: 'yubikey' });
     let flags = ['login required', 'token initialized'];
     assert.equal(token({ 'token flags': flags.concat('user PIN count low') }).pinState, 'countLow');
@@ -138,18 +143,23 @@ test('nothing that identifies the device or helps to use it, and no field an old
     assert.ok(json.length < 1024, json.length + ' bytes');
 });
 
-test('the signed offer carries the fields next to the ones the platform reads', async function() {
-    let ca = caEntry();
+// sends a solicitation for the CA through the offer handler and returns the signed part of the agent's reply
+const solicit = async function(ca, siguuid, type) {
     iot.setCerts([ca]);
     sent.length = 0;
-    let solicit = { serial: '0102', thumbprint: 'aabb', siguuid: 'sig-1' };
+    let request = { serial: '0102', thumbprint: 'aabb', siguuid: siguuid };
     let err = await new Promise(function(resolve) {
-        iot.messageReceived({ publisher: 'platform', channel: 'channel-id-1', message: { type: 'solicit signature', ttl: 10, smime: JSON.stringify(solicit) } }, resolve);
+        iot.messageReceived({ publisher: 'platform', channel: 'channel-id-1', message: { type: 'solicit signature', ttl: 10, smime: JSON.stringify(request) } }, resolve);
     });
     assert.equal(err, false);
     assert.equal(sent.length, 1);
-    assert.equal(sent[0].unsigned.type, 'services offerred');
-    let signed = JSON.parse(sent[0].signed);
+    assert.equal(sent[0].unsigned.type, type || 'services offerred');
+    return JSON.parse(sent[0].signed);
+}
+
+test('the signed offer carries the fields next to the ones the platform reads', async function() {
+    let before = Date.now();
+    let signed = await solicit(caEntry(), 'sig-1');
     assert.equal(signed.uuid, 'agent-uuid');
     assert.equal(signed.caindex, 0);
     assert.equal(signed.siguuid, 'sig-1');
@@ -158,22 +168,54 @@ test('the signed offer carries the fields next to the ones the platform reads', 
     assert.equal(signed.agent.version, pkg.version);
     assert.equal(signed.token.type, 'yubikey');
     assert.deepEqual(signed.capabilities.signTypes, ['csr', 'cms', 'crl']);
+    // the clock is read when the reply is sent
+    assert.ok(Date.parse(signed.agent.clock) >= before);
 });
 
-test('an error in the details still sends the offer, without them', async function() {
+test('a part that fails is left out on its own; the version stays', async function() {
     let ca = caEntry();
     // a CA entry a future change could break the details with
     Object.defineProperty(ca, 'token flags', { get: function() { throw new Error('broken'); } });
-    iot.setCerts([ca]);
-    sent.length = 0;
-    let solicit = { serial: '0102', thumbprint: 'aabb', siguuid: 'sig-2' };
-    let err = await new Promise(function(resolve) {
-        iot.messageReceived({ publisher: 'platform', channel: 'channel-id-1', message: { type: 'solicit signature', ttl: 10, smime: JSON.stringify(solicit) } }, resolve);
-    });
-    assert.equal(err, false);
-    assert.equal(sent.length, 1);
-    let signed = JSON.parse(sent[0].signed);
+    let signed = await solicit(ca, 'sig-2');
     assert.equal(signed.caindex, 0);
     assert.equal(signed.subjectEscaping, true);
-    assert.equal(signed.agent, undefined);
+    assert.equal(signed.agent.version, pkg.version);
+    assert.ok(signed.capabilities);
+    assert.equal(signed.token, undefined);
+});
+
+test('if building the details fails altogether, the offer still goes out without them', async function() {
+    let real = agentinfo.offerFields;
+    agentinfo.offerFields = function() { throw new Error('broken'); };
+    try {
+        let signed = await solicit(caEntry(), 'sig-3');
+        assert.equal(signed.caindex, 0);
+        assert.equal(signed.subjectEscaping, true);
+        assert.equal(signed.agent, undefined);
+    } finally {
+        agentinfo.offerFields = real;
+    }
+});
+
+test('a busy reply carries the details too, and the PIN state the agent saw', async function() {
+    let ca = caEntry();
+    // one signature takes 4 s and three wait, so another can't finish within the 10 s TTL
+    let queue = iot.getQueue(ca);
+    queue.running = queue.limit;
+    for(let i = 0; i < 3; i++) {
+        queue.tasks.push({ expires: Infinity, task: function() {} });
+    }
+    queue.duration = 4000;
+    iot.setBadpin({ '10101010': true });
+    try {
+        let signed = await solicit(ca, 'sig-4', 'services busy');
+        assert.equal(signed.busy, true);
+        assert.equal(signed.agent.version, pkg.version);
+        assert.equal(signed.token.pinState, 'rejected');
+    } finally {
+        iot.setBadpin({});
+        queue.running = 0;
+        queue.tasks.length = 0;
+        queue.duration = 0;
+    }
 });
