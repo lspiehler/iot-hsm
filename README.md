@@ -61,6 +61,10 @@ git tag -a v1.0.0 -m "IoT-HSM 1.0.0" <merge commit>
 git push origin v1.0.0
 gh release create v1.0.0 --verify-tag --title "IoT-HSM 1.0.0" --generate-notes
 ```
+To update an installed agent to a release:
+- Ubuntu install (pm2): as the `iothsm` user in `/var/node/iot-hsm`, run `git fetch --tags && git checkout v1.0.0`, then `npm ci --ignore-scripts` (dependencies can change between versions; the only install script, in the unused `zlib` package, is not needed), then `pm2 restart iot-hsm`.
+- Docker: pull the new image and recreate the container with the same volumes and settings.
+
 PKIaaS.io reads the latest release of this repository to tell HSM owners when an update is available. Pre-releases (for example `v1.1.0-rc.1`, published with `--prerelease`) are ignored, so use them for testing.
 
 The agent tells the platform its version, commit and library versions, its capabilities and its token type in its signed replies (`lib/agentInfo.js`). These fields never contain PINs, keys, paths, channel IDs, token serial numbers or the hostname.

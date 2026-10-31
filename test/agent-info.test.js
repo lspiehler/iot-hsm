@@ -95,7 +95,9 @@ test('agent: its version, the installed library versions, the OpenSSL command, N
     let clock = Date.parse(agent.clock);
     assert.ok(clock >= before && clock <= Date.now(), agent.clock);
     if(fs.existsSync(path.join(root, '.git'))) {
-        let head = (await run('git', ['rev-parse', 'HEAD'], { cwd: root })).stdout.trim();
+        // as lib/agentInfo.js reads it: never from a repository above the agent's directory
+        let env = Object.assign({}, process.env, { GIT_CEILING_DIRECTORIES: path.dirname(root) });
+        let head = (await run('git', ['rev-parse', 'HEAD'], { cwd: root, env: env })).stdout.trim();
         assert.equal(agent.commit, head);
     }
 });
@@ -121,6 +123,8 @@ test('token: its type and the PIN state from the token flags', function() {
     assert.deepEqual(token({ module: '/opt/vendor/libother.so' }), { type: 'unknown', pinState: 'ok', pinStateRead: read });
     // a PIN the agent's login failed with is the state now, not as of the slot listing
     assert.deepEqual(agentinfo.offerFields(caEntry(), { badpin: true }).token, { type: 'yubikey', pinState: 'rejected' });
+    // also when the slot listing had no token flags
+    assert.deepEqual(agentinfo.offerFields(caEntry({ 'token flags': undefined }), { badpin: true }).token, { type: 'yubikey', pinState: 'rejected' });
     assert.deepEqual(token({ 'token flags': undefined }), { type: 'yubikey' });
     let flags = ['login required', 'token initialized'];
     assert.equal(token({ 'token flags': flags.concat('user PIN count low') }).pinState, 'countLow');
