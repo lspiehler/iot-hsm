@@ -69,6 +69,9 @@ PKIaaS.io reads the latest release of this repository to tell HSM owners when an
 
 The agent tells the platform its version, commit and library versions, its capabilities and its token type in its signed replies (`lib/agentInfo.js`). These fields never contain PINs, keys, paths, channel IDs, token serial numbers or the hostname.
 
+## A wrong PIN
+A YubiKey blocks its PIN after a few wrong tries, so the agent stops using a token as soon as a login with its PIN fails, whether for a signature or for a channel certificate renewal. Until then it doesn't offer to sign for that token's CAs: when its channel certificate is current it replies that it is busy, with the PIN state `rejected`. After correcting the PIN, reload the slots (`/api/reload`) or restart the agent.
+
 ## Tests
 ```
 npm test
