@@ -48,3 +48,28 @@ pkcs11-tool --list-slots --module /usr/lib/x86_64-linux-gnu/libykcs11.so
 pkcs11-tool --list-objects --module /usr/lib/x86_64-linux-gnu/libykcs11.so --slot 0
 pkcs11-tool --module /usr/lib/x86_64-linux-gnu/libykcs11.so --login --login-type so --so-pin 010203040506070801020304050607080102030405060708 --slot 0x0 --id 13 --delete-object --type privkey
 ```
+
+## Versions and releases
+The agent's version is in `package.json` and follows [semantic versioning](https://semver.org). Agents update on their own schedule, so every version must keep working with the current platform and with older platforms.
+- Patch (1.0.1): fixes.
+- Minor (1.1.0): new features, settings or offer fields that older platforms can ignore.
+- Major (2.0.0): only with a platform that already supports the change, since it can stop older platforms from using the agent.
+
+Raise the version in the pull request that changes the agent (`npm version <version> --no-git-tag-version` updates `package.json` and `package-lock.json`). After the merge, tag the merge commit and publish a GitHub release with its notes:
+```
+git tag -a v1.0.0 -m "IoT-HSM 1.0.0" <merge commit>
+git push origin v1.0.0
+gh release create v1.0.0 --verify-tag --title "IoT-HSM 1.0.0" --generate-notes
+```
+To update an installed agent to a release:
+- Ubuntu install (pm2): as the `iothsm` user in `/var/node/iot-hsm`, run `git fetch --tags && git checkout v1.0.0`, then `npm ci --ignore-scripts` (dependencies can change between versions; the only install script, in the unused `zlib` package, is not needed), then `pm2 restart iot-hsm`.
+- Docker: pull the new image and recreate the container with the same volumes and settings.
+
+PKIaaS.io reads the latest release of this repository to tell HSM owners when an update is available. Pre-releases (for example `v1.1.0-rc.1`, published with `--prerelease`) are ignored, so use them for testing.
+
+The agent tells the platform its version, commit and library versions, its capabilities and its token type in its signed replies (`lib/agentInfo.js`). These fields never contain PINs, keys, paths, channel IDs, token serial numbers or the hostname.
+
+## Tests
+```
+npm test
+```

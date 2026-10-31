@@ -1,9 +1,10 @@
 {
   "name": "pkcs11iot",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@google-cloud/kms": "6.2.1",
