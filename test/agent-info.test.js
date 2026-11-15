@@ -105,7 +105,7 @@ test('agent: its version, the installed library versions, the OpenSSL command, N
 test('capabilities: native signing, the request kinds and the algorithm of the CA key', function() {
     let capabilities = agentinfo.offerFields(caEntry()).capabilities;
     assert.equal(capabilities.nativeSigning, false);
-    assert.deepEqual(capabilities.signTypes, ['csr', 'cms', 'crl']);
+    assert.deepEqual(capabilities.signTypes, ['csr', 'cms', 'crl', 'ct-final']);
     assert.deepEqual(capabilities.algorithm, { key: 'rsa', bits: 2048, certificateHash: 'sha256' });
     // a Google KMS key allows one hash
     let kms = agentinfo.offerFields(caEntry({ base64: ecca, module: KMS, 'token flags': ['token initialized'], private_key: { 'Allowed mechanisms': 'ECDSA-SHA384' } }));
@@ -171,9 +171,15 @@ test('the signed offer carries the fields next to the ones the platform reads', 
     assert.equal(signed.busy, undefined);
     assert.equal(signed.agent.version, pkg.version);
     assert.equal(signed.token.type, 'yubikey');
-    assert.deepEqual(signed.capabilities.signTypes, ['csr', 'cms', 'crl']);
+    assert.deepEqual(signed.capabilities.signTypes, ['csr', 'cms', 'crl', 'ct-final']);
     // the clock is read when the reply is sent
     assert.ok(Date.parse(signed.agent.clock) >= before);
+});
+
+test('capabilities: no ct-final when node-pki-signer can\'t build final certificates', function(t) {
+    const nativeSigning = require('../lib/nativeSigning');
+    t.mock.method(nativeSigning, 'canSignFinalCertificates', () => false);
+    assert.deepEqual(agentinfo.offerFields(caEntry()).capabilities.signTypes, ['csr', 'cms', 'crl']);
 });
 
 test('a part that fails is left out on its own; the version stays', async function() {
