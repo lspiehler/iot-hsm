@@ -246,10 +246,12 @@ function sctList() {
 }
 
 // the CT final certificate (sign type 'ct-final'): the precertificate the token signed, with its poison swapped for
-// the SCT list, signed by the token again; with native signing off through OpenSSL's pkcs11-provider
+// the SCT list, signed by the token again. The agent's signers have no PKCS#11 sessions (pkcs11js never opens the
+// token), so with native signing on or off a token's key signs through OpenSSL's pkcs11-provider
 test.describe('CT final certificate on a PKCS#11 token', { skip: pkcs11 ? false : 'LIVE_* variables not set' }, () => {
     const signFinal = promisify(slotlib.signFinalCertificate);
-    for (const [native, backend] of [[false, 'openssl-pkcs11'], ['1', 'pkcs11']]) {
+    const backend = 'openssl-pkcs11';
+    for (const native of [false, '1']) {
         test(`native signing ${native ? 'on' : 'off'}: the ${backend} backend`, async () => {
             const c = cases['CT precertificate (poison)'];
             const precert = (await slotlibSignCSR(pkcs11, await newCSR(c.subject), c.options(), native)).cert;
