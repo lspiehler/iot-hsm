@@ -235,6 +235,67 @@ const kms = env.LIVE_KMS_OBJECTID && env.LIVE_KMS_CA
     : false;
 
 suite('PKCS#11 token', pkcs11, Object.keys(cases));
+
+// a DER OCTET STRING around a TLS SCT list with one made-up SCT, as pkiaas builds it from the CT logs' answers
+function sctList() {
+    const sct = Buffer.concat([Buffer.from([0]), Buffer.alloc(32, 7), Buffer.from('0000019a00000000', 'hex'),
+        Buffer.from([0, 0, 4, 3, 0, 8]), Buffer.alloc(8, 0x5a)]);
+    const vector = (bytes) => Buffer.concat([Buffer.from([bytes.length >> 8, bytes.length & 0xff]), bytes]);
+    const list = vector(vector(sct));
+    return Buffer.concat([Buffer.from([0x04, list.length]), list]);
+}
+
+// the CT final certificate (sign type 'ct-final'): the precertificate the token signed, with its poison swapped for
+// the SCT list, signed by the token again; with native signing off through OpenSSL's pkcs11-provider
+test.describe('CT final certificate on a PKCS#11 token', { skip: pkcs11 ? false : 'LIVE_* variables not set' }, () => {
+    const signFinal = promisify(slotlib.signFinalCertificate);
+    for (const [native, backend] of [[false, 'openssl-pkcs11'], ['1', 'pkcs11']]) {
+        test(`native signing ${native ? 'on' : 'off'}: the ${backend} backend`, async () => {
+            const c = cases['CT precertificate (poison)'];
+            const precert = (await slotlibSignCSR(pkcs11, await newCSR(c.subject), c.options(), native)).cert;
+            config.NATIVESIGNING = native;
+            const logged = [];
+            const log = console.log;
+            console.log = (...args) => {
+                logged.push(args.join(' '));
+                log(...args);
+            };
+            let final;
+            try {
+                final = await signFinal({ publiccert: pkcs11.ca, precertificate: precert, sctList: sctList(),
+                    module: pkcs11.module, serial: pkcs11.serial, pin: pkcs11.pin, objectid: pkcs11.objectid });
+            } finally {
+                console.log = log;
+                config.NATIVESIGNING = false;
+            }
+            assert.ok(logged.some((line) => line.endsWith(`with the ${backend} backend`)), logged.join('\n'));
+            const [p, f] = [new X509Certificate(precert), new X509Certificate(final)];
+            assert.equal(f.serialNumber, p.serialNumber);
+            assert.equal(f.validFrom, p.validFrom);
+            assert.equal(f.validTo, p.validTo);
+            assert.ok(f.verify(new X509Certificate(pkcs11.ca).publicKey));
+            const file = path.join(process.env.STATEDIR, 'final.pem');
+            fs.writeFileSync(file, final);
+            const text = (await run('openssl', ['x509', '-in', file, '-noout', '-text'])).stdout;
+            assert.match(text, /CT Precertificate SCTs/);
+            assert.doesNotMatch(text, /CT Precertificate Poison/);
+        });
+    }
+
+    test('refuses a precertificate another key signed, without signing', async () => {
+        const c = cases['CT precertificate (poison)'];
+        const precert = (await slotlibSignCSR(pkcs11, await newCSR(c.subject), c.options(), false)).cert;
+        // the precertificate's last signature byte changed: the token's key didn't sign this
+        const der = Buffer.from(new X509Certificate(precert).raw);
+        der[der.length - 1] ^= 1;
+        const forged = `-----BEGIN CERTIFICATE-----\n${der.toString('base64')}\n-----END CERTIFICATE-----\n`;
+        await assert.rejects(
+            signFinal({ publiccert: pkcs11.ca, precertificate: forged, sctList: sctList(),
+                module: pkcs11.module, serial: pkcs11.serial, pin: pkcs11.pin, objectid: pkcs11.objectid }),
+            /verify precertificate/,
+        );
+    });
+});
 // two cases keep the KMS cost at four asymmetricSign calls per run
 suite('Google Cloud KMS', kms, ['web server (the SCEP e2e template)', 'OCSP service certificate']);
 
