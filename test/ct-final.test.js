@@ -123,7 +123,7 @@ test('ct-final: a malformed request is refused without touching the token, one r
 });
 
 test('ct-final: a rejected PIN stops the token, also as pkcs11-provider reports it (a key it can\'t find)', async function() {
-    for(let error of ['PKCS#11 login: CKR_PIN_INCORRECT', 'PKCS11_login:... Login failed', 'openssl dgst: Could not find private key from the token\'s key']) {
+    for(let error of ['PKCS#11 login: CKR_PIN_INCORRECT', 'PKCS11_login:... Login failed', 'openssl dgst: Could not find private key from the token\'s key', 'openssl dgst: Could not open file or uri for loading key from the token\'s key']) {
         iot.setBadpin({}); token.uses.length = 0; sent.length = 0; token.error = error;
         await request('ct-final', 'pin-' + error.length, good);
         assert.deepEqual(token.uses, ['ct-final']);
