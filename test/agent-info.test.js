@@ -12,6 +12,8 @@ const { promisify } = require('node:util');
 
 const root = path.join(__dirname, '..');
 process.env.STATEDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-info-state-'));
+// the owner's name for the appliance, with the spaces around it that a .env line may leave
+process.env.AGENT_NAME = '  Rack 4 HSM (spare) ';
 
 const stub = function(file, exports) {
     let filename = require.resolve(path.join(root, file));
@@ -84,6 +86,7 @@ test('agent: its version, the installed library versions, the OpenSSL command, N
     let before = Date.now();
     let agent = agentinfo.offerFields(caEntry()).agent;
     assert.equal(agent.version, pkg.version);
+    assert.equal(agent.name, 'Rack 4 HSM (spare)');
     for(let [field, name] of [['pubnub', 'pubnub'], ['nodePkiSigner', 'node-pki-signer'], ['nodeOpensslCert2', 'node-openssl-cert2']]) {
         let installed = JSON.parse(fs.readFileSync(path.join(root, 'node_modules', name, 'package.json'), 'utf8')).version;
         assert.equal(agent.versions[field], installed, field);
@@ -147,6 +150,15 @@ test('nothing that identifies the device or helps to use it, and no field an old
     assert.ok(json.length < 1024, json.length + ' bytes');
 });
 
+test('name: only AGENT_NAME, trimmed, and only one the platform accepts; never the hostname', function() {
+    assert.equal(agentinfo.agentName(' Lab rack 2 '), 'Lab rack 2');
+    assert.equal(agentinfo.agentName('Büro HSM #1 (eu-west/a) ops@site:2'), 'Büro HSM #1 (eu-west/a) ops@site:2');
+    assert.equal(agentinfo.agentName('x'.repeat(64)), 'x'.repeat(64));
+    for(let bad of [undefined, '', '   ', 'x'.repeat(65), 'a<b>', 'line\nbreak', 'tab\there', 'quote"d', 'semi;colon']) {
+        assert.equal(agentinfo.agentName(bad), false, JSON.stringify(bad));
+    }
+});
+
 // sends a solicitation for the CA through the offer handler and returns the signed part of the agent's reply
 const solicit = async function(ca, siguuid, type) {
     iot.setCerts([ca]);
@@ -170,6 +182,7 @@ test('the signed offer carries the fields next to the ones the platform reads', 
     assert.equal(signed.subjectEscaping, true);
     assert.equal(signed.busy, undefined);
     assert.equal(signed.agent.version, pkg.version);
+    assert.equal(signed.agent.name, 'Rack 4 HSM (spare)');
     assert.equal(signed.token.type, 'yubikey');
     assert.deepEqual(signed.capabilities.signTypes, ['csr', 'cms', 'crl', 'ct-final']);
     // the clock is read when the reply is sent

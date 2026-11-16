@@ -9,6 +9,8 @@ apt -y install curl
 curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu.sh | bash -
 ```
 
+The script asks for a name for the appliance, which the platform shows instead of the appliance's ID (press Enter to use the hostname). To skip the question, for example in automation, set the name before running it: `curl -sL ... | AGENT_NAME="Rack 4 HSM" bash -` (`AGENT_NAME=` sends no name). The name is saved in `/var/node/iot-hsm/.env`; to change it later, edit `AGENT_NAME` there and run `sudo -u iothsm pm2 restart iot-hsm`.
+
 You should now be able to login and begin managing your HSM by navigating to https://youripaddress
 
 The password for the web interface can be changed by running the following command from a terminal as root or by prefixing the command with "sudo": 
@@ -24,8 +26,9 @@ systemctl reload apache2
 ## Docker Command
 The web interface has no authentication of its own and can use every key on the HSM. Only expose it through a reverse proxy that requires a login and HTTPS, like the Apache configuration created by the Ubuntu install above. The command below publishes it on 127.0.0.1 only.
 ```
-docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -p 127.0.0.1:3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state ghcr.io/lspiehler/iot-hsm:latest
+docker run -it -d --restart=always --name iot-hsm -e LISTENIP=0.0.0.0 -e AGENT_NAME="Rack 4 HSM" -p 127.0.0.1:3001:3000 -v iot-hsm:/var/lib/softhsm/tokens -v /var/node/iot-hsm/state:/var/node/iot-hsm/state ghcr.io/lspiehler/iot-hsm:latest
 ```
+`AGENT_NAME` is the name the platform shows for the appliance instead of its ID: 1 to 64 letters, digits, spaces and `. _ - ( ) # : / @`. A container's hostname is a random ID, so the agent never sends it; without `AGENT_NAME` the platform shows the ID.
 
 ### Troubleshooting
 Uninstall dependencies

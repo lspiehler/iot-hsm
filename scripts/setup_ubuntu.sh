@@ -1,5 +1,30 @@
 #!/bin/bash
 
+#The name the platform shows for this appliance instead of its ID: 1 to 64 letters, digits, spaces and . _ - ( ) # : / @.
+#The script is piped into bash, so the answer is read from the terminal; without one the hostname is used. Set AGENT_NAME
+#before running the script to skip the question (AGENT_NAME= sends no name).
+valid_name() {
+  [[ "$1" =~ ^[[:alnum:]\ ._()\#:/@-]{1,64}$ && "$1" == "${1#[[:space:]]}" && "$1" == "${1%[[:space:]]}" ]]
+}
+if [ -z "${AGENT_NAME+set}" ]; then
+  AGENT_NAME=$(hostname)
+  if (exec < /dev/tty) 2> /dev/null; then
+    while true; do
+      read -r -p "Name for this IoT-HSM appliance, shown on the platform [$AGENT_NAME]: " answer < /dev/tty
+      answer=${answer:-$AGENT_NAME}
+      if valid_name "$answer"; then
+        AGENT_NAME=$answer
+        break
+      fi
+      echo "Use 1 to 64 letters, digits, spaces and . _ - ( ) # : / @, without spaces at either end."
+    done
+  fi
+fi
+if [ -n "$AGENT_NAME" ] && ! valid_name "$AGENT_NAME"; then
+  echo "AGENT_NAME must be 1 to 64 letters, digits, spaces and . _ - ( ) # : / @, without spaces at either end." >&2
+  exit 1
+fi
+
 #Update apt
 apt update
 
@@ -79,6 +104,9 @@ cd /var/node/iot-hsm
 cat << EOF > .env
 LISTENIP=localhost
 EOF
+if [ -n "$AGENT_NAME" ]; then
+  echo "AGENT_NAME=\"$AGENT_NAME\"" >> .env
+fi
 
 #Start service with PM2 and save
 sudo -u iothsm pm2 start ./bin/www --name="iot-hsm"
