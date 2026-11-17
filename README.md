@@ -1,8 +1,8 @@
 # IoT-HSM
 IoT-HSM allows Yubikeys and SoftHSM2 devices to be managed and serve as an "IoT HSM" interface for signing operations from [PKIaaS.io](https://www.pkiaas.io/iot-hsm).
 
-## Install IoT-HSM on Ubuntu 24.04 or 25.10
-The following commands should be run as root on a base install of Ubuntu 24.04 or Ubuntu 25.10. You can switch to the root user using the "su" command or "sudo su -"
+## Install IoT-HSM on Ubuntu 24.04 or 26.04
+The following commands should be run as root on a base install of Ubuntu 24.04 or Ubuntu 26.04. You can switch to the root user using the "su" command or "sudo su -"
 ```
 apt update
 apt -y install curl
