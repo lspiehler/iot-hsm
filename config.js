@@ -13,5 +13,7 @@ module.exports = {
 	CHANNELCERTMINUTES: process.env.CHANNELCERTMINUTES || 720,
 	GOOGLE_KMS_CONCURRENCY: process.env.GOOGLE_KMS_CONCURRENCY || 4,
 	SOFTHSM_CONCURRENCY: process.env.SOFTHSM_CONCURRENCY || 2,
-	NATIVESIGNING: process.env.NATIVESIGNING || false
+	NATIVESIGNING: process.env.NATIVESIGNING || false,
+	// the name the platform shows for this appliance instead of its ID; none by default (never the hostname)
+	AGENT_NAME: process.env.AGENT_NAME || ''
 }
