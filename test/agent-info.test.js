@@ -157,6 +157,12 @@ test('name: only AGENT_NAME, trimmed, and only one the platform accepts; never t
     for(let bad of [undefined, '', '   ', 'x'.repeat(65), 'a<b>', 'line\nbreak', 'tab\there', 'quote"d', 'semi;colon']) {
         assert.equal(agentinfo.agentName(bad), false, JSON.stringify(bad));
     }
+    // Unicode letters and numbers, whatever the locale, but not marks or symbols (the installer checks names here too)
+    assert.equal(agentinfo.agentName('HSM²'), 'HSM²');
+    for(let bad of ['Bu\u0308ro', '\u24b6', '$(id)', '`id`', 'back\\slash']) {
+        assert.equal(agentinfo.agentName(bad), false, JSON.stringify(bad));
+    }
+    assert.equal(agentinfo.agentName, require('../lib/agentName'));
 });
 
 // sends a solicitation for the CA through the offer handler and returns the signed part of the agent's reply

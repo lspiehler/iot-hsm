@@ -9,7 +9,7 @@ apt -y install curl
 curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu.sh | bash -
 ```
 
-The script asks for a name for the appliance, which the platform shows instead of the appliance's ID (press Enter to use the hostname). To skip the question, for example in automation, set the name before running it: `curl -sL ... | AGENT_NAME="Rack 4 HSM" bash -` (`AGENT_NAME=` sends no name). The name is saved in `/var/node/iot-hsm/.env`; to change it later, edit `AGENT_NAME` there and run `sudo -u iothsm pm2 restart iot-hsm`.
+Once IoT-HSM is installed, the script asks for a name for the appliance, which the platform shows instead of the appliance's ID. Press Enter to use the hostname (offered only when it is a valid name). Without a terminal, for example in automation, the appliance gets no name unless you set it before running the script: `curl -sL ... | AGENT_NAME="Rack 4 HSM" bash -` (`AGENT_NAME=` sends no name). Run that as root rather than through `sudo`, which drops `AGENT_NAME`. A name is 1 to 64 letters, digits, spaces and `. _ - ( ) # : / @`; one the platform wouldn't accept is not saved. The name is saved in `/var/node/iot-hsm/.env`; to change it later, edit `AGENT_NAME` there and run `sudo -u iothsm pm2 restart iot-hsm`.
 
 You should now be able to login and begin managing your HSM by navigating to https://youripaddress
 
@@ -70,7 +70,7 @@ To update an installed agent to a release:
 
 PKIaaS.io reads the latest release of this repository to tell HSM owners when an update is available. Pre-releases (for example `v1.1.0-rc.1`, published with `--prerelease`) are ignored, so use them for testing.
 
-The agent tells the platform its version, commit and library versions, its capabilities and its token type in its signed replies (`lib/agentInfo.js`). These fields never contain PINs, keys, paths, channel IDs, token serial numbers or the hostname.
+The agent tells the platform its version, commit and library versions, its capabilities and its token type in its signed replies (`lib/agentInfo.js`). These fields never contain PINs, keys, paths, channel IDs or token serial numbers. The only name they carry is the one the owner gave the appliance (`AGENT_NAME`), which may be its hostname if the owner chose it at the installer's question; the agent never sends the hostname on its own.
 
 ## A wrong PIN
 A YubiKey blocks its PIN after a few wrong tries, so the agent stops using a token as soon as a login with its PIN fails, whether for a signature or for a channel certificate renewal. Until then it doesn't offer to sign for that token's CAs: when its channel certificate is current it replies that it is busy, with the PIN state `rejected`. After correcting the PIN, reload the slots (`/api/reload`) or restart the agent.

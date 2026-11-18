@@ -1,29 +1,9 @@
 #!/bin/bash
 
-#The name the platform shows for this appliance instead of its ID: 1 to 64 letters, digits, spaces and . _ - ( ) # : / @.
-#The script is piped into bash, so the answer is read from the terminal; without one the hostname is used. Set AGENT_NAME
-#before running the script to skip the question (AGENT_NAME= sends no name).
-valid_name() {
-  [[ "$1" =~ ^[[:alnum:]\ ._()\#:/@-]{1,64}$ && "$1" == "${1#[[:space:]]}" && "$1" == "${1%[[:space:]]}" ]]
-}
-if [ -z "${AGENT_NAME+set}" ]; then
-  AGENT_NAME=$(hostname)
-  if (exec < /dev/tty) 2> /dev/null; then
-    while true; do
-      read -r -p "Name for this IoT-HSM appliance, shown on the platform [$AGENT_NAME]: " answer < /dev/tty
-      answer=${answer:-$AGENT_NAME}
-      if valid_name "$answer"; then
-        AGENT_NAME=$answer
-        break
-      fi
-      echo "Use 1 to 64 letters, digits, spaces and . _ - ( ) # : / @, without spaces at either end."
-    done
-  fi
-fi
-if [ -n "$AGENT_NAME" ] && ! valid_name "$AGENT_NAME"; then
-  echo "AGENT_NAME must be 1 to 64 letters, digits, spaces and . _ - ( ) # : / @, without spaces at either end." >&2
-  exit 1
-fi
+#The name the platform shows for this appliance instead of its ID (AGENT_NAME), asked once the agent is installed so that
+#its own rule (lib/agentName.js) checks it. Set AGENT_NAME before running the script to skip the question (AGENT_NAME=
+#sends no name). The script is piped into bash, so the answer is read from the terminal; without one the appliance gets
+#no name.
 
 #Update apt
 apt update
@@ -98,6 +78,32 @@ npm install pm2 -g
 
 #Run pm2 st startup
 pm2 startup ubuntu -u iothsm --hp /home/iothsm
+
+#Name the appliance: prints the name as the agent will send it, or fails when the platform wouldn't accept it
+agent_name() {
+  node -e 'const name = require("/var/node/iot-hsm/lib/agentName")(process.argv[1]); if (name === false) process.exit(1); console.log(name);' -- "$1"
+}
+NAME_RULE="1 to 64 letters, digits, spaces and . _ - ( ) # : / @"
+if [ -n "${AGENT_NAME+set}" ]; then
+  if [ -n "$AGENT_NAME" ] && ! AGENT_NAME=$(agent_name "$AGENT_NAME"); then
+    echo "AGENT_NAME is not a name the platform accepts ($NAME_RULE), so the appliance has no name. To name it, set AGENT_NAME in /var/node/iot-hsm/.env and run: sudo -u iothsm pm2 restart iot-hsm" >&2
+    AGENT_NAME=
+  fi
+elif (exec < /dev/tty) 2> /dev/null; then
+  #the hostname is offered only when it is a name the platform accepts
+  default=$(agent_name "$(hostname)") || default=
+  while true; do
+    read -r -p "Name for this IoT-HSM appliance, shown on the platform${default:+ [$default]}: " answer < /dev/tty
+    answer=${answer:-$default}
+    if [ -z "$answer" ] || AGENT_NAME=$(agent_name "$answer"); then
+      break
+    fi
+    echo "Use $NAME_RULE."
+  done
+else
+  AGENT_NAME=
+  echo "No terminal to ask for a name, so the appliance has no name. To name it, set AGENT_NAME in /var/node/iot-hsm/.env and run: sudo -u iothsm pm2 restart iot-hsm"
+fi
 
 #Configure service to listen only on localhost
 cd /var/node/iot-hsm
