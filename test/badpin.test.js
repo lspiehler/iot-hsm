@@ -58,7 +58,7 @@ encryptMessage = function(params, callback) { callback(false, params.signed); };
 sendSignedMessage = function(params, callback) { module.exports.__sent.push(params); callback(false, {}); };
 pubnub = { getUUID: function() { return 'agent-uuid'; } };
 module.exports.__t = { messageReceived: messageReceived, setCerts: function(c) { certs = c; }, getBadpin: function() { return badpin; },
-    setBadpin: function(b) { badpin = b; }, getQueue: getQueue, scheduleRenewal: scheduleRenewal, getChannels: getChannels };`, iotfile);
+    setBadpin: function(b) { badpin = b; }, getQueue: getQueue, scheduleRenewal: scheduleRenewal, getChannels: getChannels, signMessage: signMessage };`, iotfile);
 iotmod.exports.__sent = sent;
 const iot = iotmod.exports.__t;
 
@@ -408,4 +408,13 @@ test('at slot load, a channel whose key pkcs11-provider couldn\'t read shows Inv
     await new Promise(function(resolve) { iot.getChannels([], [ca], 0, resolve); });
     assert.equal(ca.channel.message, 'Invalid PIN');
     assert.equal(check.calls.length, 0);
+});
+
+test('characterization (before the PIN check): a channel certificate renewed for a message, whose key pkcs11-provider couldn\'t read, leaves the token in use', async function() {
+    channel.current = false;
+    token.error = PROVIDER_UNREADABLE_KEY;
+    let err = await new Promise(function(resolve) { iot.signMessage({ cert: ca, signed: 'reply' }, resolve); });
+    assert.equal(err, PROVIDER_UNREADABLE_KEY);
+    assert.deepEqual(token.uses, ['channel']);
+    assert.equal(iot.getBadpin()[SERIAL], undefined);
 });
