@@ -34,8 +34,16 @@ stub('lib/smime/index', { x509: {
     lifetime: 60,
     isCurrent: function() { return channel.current; },
     renewCert: function(cert, callback) { use('renewal')({}, callback); },
-    getCert: function(cert, callback) { use('channel')({}, callback); }
+    getCert: function(cert, callback) { if(channel.current) { callback(false, 'channel cert'); } else { use('channel')({}, callback); } }
 } });
+
+// the PIN check logs in to the token; here it answers what the test says, and counts its calls
+const pincheck = require(path.join(root, 'lib/pinCheck'));
+const check = { result: 'accepted', calls: [] };
+pincheck.checkPin = function(params, callback) {
+    check.calls.push(params);
+    setImmediate(function() { callback(check.result, check.result == 'unknown' ? 'pkcs11-tool gave no answer in 10 s' : ''); });
+};
 
 // load IoTHSM.js with its handlers exposed; the platform's signature check and the encryption and signing of replies are replaced
 const sent = [];
@@ -63,6 +71,7 @@ const caEntry = function() {
         base64: 'not a certificate',
         certinfo: { attributes: { 'Serial Number': '01:02', 'Thumbprint': 'aa:bb', 'Not After': new Date(Date.now() + 3600 * 1000).toISOString() } },
         'token serial': SERIAL,
+        'token hexid': '0x2a',
         'token flags': ['login required', 'token initialized'],
         module: '/usr/lib/x86_64-linux-gnu/libykcs11.so',
         channel: { id: 'channel-id-1', key: { base64: 'not a key', pass: '123456' }, certinfo: { attributes: { 'Not After': new Date(Date.now() + 3600 * 1000).toISOString() } } }
@@ -82,6 +91,8 @@ test.beforeEach(function() {
     token.error = false;
     channel.current = true;
     sent.length = 0;
+    check.result = 'accepted';
+    check.calls.length = 0;
 });
 
 test.after(function() {
@@ -236,66 +247,165 @@ test('with the PIN accepted, the token offers and signs as before', async functi
 // it couldn't read; the same message comes from two key loads racing on one token with the right PIN (agent 1.0.1's parallel signing)
 const PROVIDER_UNREADABLE_KEY = 'Using configuration from openssl.cnf\nCould not read CA private key from pkcs11:serial=' + SERIAL + ';id=%10;type=private\n';
 
-test('characterization (before the PIN check): a key pkcs11-provider couldn\'t read leaves the token in use', async function() {
+// waits for done() (zlib and the stubs answer on later turns of the event loop; setTimeout may be mocked), up to 5 s
+const settle = async function(done) {
+    let started = Date.now();
+    while(!done() && Date.now() - started < 5000) {
+        await new Promise(setImmediate);
+    }
+}
+// lets what is already under way finish, for checking that something did not happen
+const flush = async function() {
+    for(let i = 0; i < 100; i++) {
+        await new Promise(setImmediate);
+    }
+}
+
+test('a key pkcs11-provider couldn\'t read stops the token only when a login to the token rejects the PIN', async function() {
     for(let signtype of ['csr', 'crl']) {
-        iot.setBadpin({});
-        token.uses.length = 0;
-        token.error = PROVIDER_UNREADABLE_KEY;
-        await requestSignature(signtype, 'unreadable-' + signtype);
-        assert.equal(iot.getBadpin()[SERIAL], undefined, signtype);
-        await requestSignature(signtype, 'unreadable-' + signtype + '-2');
-        assert.deepEqual(token.uses, [signtype, signtype], signtype);
+        for(let [result, stopped] of [['rejected', true], ['accepted', false], ['unknown', false]]) {
+            iot.setBadpin({});
+            ca.channel.message = undefined;
+            token.uses.length = 0;
+            sent.length = 0;
+            check.calls.length = 0;
+            check.result = result;
+            token.error = PROVIDER_UNREADABLE_KEY;
+            await requestSignature(signtype, 'unreadable-' + signtype + '-' + result);
+            // the token is asked with the agent's PIN, on its own slot
+            assert.equal(check.calls.length, 1, signtype + ' ' + result);
+            assert.deepEqual(check.calls[0], { module: ca.module, slotid: ca['token hexid'], serial: SERIAL, pin: '123456' });
+            assert.equal(iot.getBadpin()[SERIAL] === true, stopped, signtype + ' ' + result);
+            assert.equal(ca.channel.message, stopped ? 'Invalid PIN' : undefined);
+            // the platform gets the signing error either way
+            assert.equal(lastReply().signed.success, false);
+            assert.equal(lastReply().signed.message, PROVIDER_UNREADABLE_KEY);
+            // a rejected PIN isn't tried again; otherwise the next request uses the token (failing for another reason, so a
+            // CRL isn't delivered to the platform)
+            token.error = 'Could not sign: another reason';
+            await requestSignature(signtype, 'unreadable-' + signtype + '-' + result + '-2');
+            assert.deepEqual(token.uses, stopped ? [signtype] : [signtype, signtype], signtype + ' ' + result);
+        }
     }
 });
 
-test('characterization (before the time limit): a signature that never answers leaves the token in use, and the queue moves on after 5 s', async function(t) {
+test('a login failure stops the token without asking it again, and other errors don\'t ask it at all', async function() {
+    token.error = NATIVE_WRONG_PIN;
+    await requestSignature('csr', 'login-1');
+    assert.equal(iot.getBadpin()[SERIAL], true);
+    assert.equal(check.calls.length, 0);
+    iot.setBadpin({});
+    token.error = 'Could not sign the request: unsupported extension';
+    await requestSignature('csr', 'other-1');
+    assert.equal(check.calls.length, 0);
+    assert.equal(iot.getBadpin()[SERIAL], undefined);
+});
+
+test('a signature still running after the time limit has the PIN checked; the queue moves on after 5 s, no reply is made up, and a late result is handled as usual', async function(t) {
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    let hung = 0;
     let slotlib = require(path.join(root, 'lib/slotlib'));
     let signCMS = slotlib.signCMS;
-    slotlib.signCMS = function() { hung++; };
+    let pending = [];
+    slotlib.signCMS = function(params, callback) { pending.push(callback); };
     try {
-        let request = { siguuid: 'hang-1', request: { options: { inform: 'PEM', outform: 'PEM' } } };
-        await receive({ type: 'signature request', ttl: 10, caindex: 0, signtype: 'cms', smime: zlib.deflateSync(JSON.stringify(request)).toString('base64') });
-        let queue = iot.getQueue(ca);
-        for(let i = 0; i < 100 && hung == 0; i++) {
-            await new Promise(setImmediate);
+        for(let [result, stopped] of [['accepted', false], ['rejected', true]]) {
+            iot.setBadpin({});
+            check.calls.length = 0;
+            check.result = result;
+            sent.length = 0;
+            let request = { siguuid: 'hang-' + result, request: { options: { inform: 'PEM', outform: 'PEM' } } };
+            await receive({ type: 'signature request', ttl: 10, caindex: 0, signtype: 'cms', smime: zlib.deflateSync(JSON.stringify(request)).toString('base64') });
+            let queue = iot.getQueue(ca);
+            await settle(function() { return pending.length > 0; });
+            assert.equal(pending.length, 1);
+            t.mock.timers.tick(5000);
+            assert.equal(queue.running, 0);
+            assert.equal(check.calls.length, 0);
+            t.mock.timers.tick(10000);
+            await settle(function() { return iot.getBadpin()[SERIAL] === stopped || (!stopped && check.calls.length > 0); });
+            await flush();
+            assert.equal(check.calls.length, 1, result);
+            assert.equal(iot.getBadpin()[SERIAL] === true, stopped, result);
+            assert.equal(sent.length, 0);
+            // the signature ends after all: its result goes to the platform as before
+            pending.shift()(false, 'signed late');
+            await settle(function() { return sent.length > 0; });
+            assert.equal(lastReply().signed.success, true);
+            assert.equal(lastReply().signed.message, 'signed late');
         }
-        assert.equal(hung, 1);
-        assert.equal(queue.running, 1);
-        t.mock.timers.tick(5000);
-        assert.equal(queue.running, 0);
-        t.mock.timers.tick(60000);
-        assert.equal(iot.getBadpin()[SERIAL], undefined);
-        assert.equal(sent.length, 0);
     } finally {
         slotlib.signCMS = signCMS;
     }
 });
 
-test('characterization (before the PIN check): a renewal whose key pkcs11-provider couldn\'t read is tried again in 5 minutes', async function(t) {
-    token.error = PROVIDER_UNREADABLE_KEY;
-    ca.channel.certinfo.attributes['Not After'] = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+test('SIGNATURE_TIME_LIMIT sets the time limit in seconds', async function(t) {
+    let config = require(path.join(root, 'config'));
+    let limit = config.SIGNATURE_TIME_LIMIT;
+    config.SIGNATURE_TIME_LIMIT = '30';
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    iot.scheduleRenewal(ca, 0);
-    t.mock.timers.tick(0);
-    for(let i = 0; i < 100 && token.uses.length == 0; i++) {
-        await new Promise(setImmediate);
+    let slotlib = require(path.join(root, 'lib/slotlib'));
+    let signCSR = slotlib.signCSR;
+    let pending = [];
+    slotlib.signCSR = function(params, callback) { pending.push(callback); };
+    try {
+        let request = { siguuid: 'limit-30', request: { csr: 'csr', options: {} } };
+        await receive({ type: 'signature request', ttl: 10, caindex: 0, signtype: 'csr', smime: zlib.deflateSync(JSON.stringify(request)).toString('base64') });
+        await settle(function() { return pending.length > 0; });
+        t.mock.timers.tick(29000);
+        await flush();
+        assert.equal(check.calls.length, 0);
+        t.mock.timers.tick(1000);
+        await settle(function() { return check.calls.length > 0; });
+        assert.equal(check.calls.length, 1);
+        pending.shift()(false, 'signed');
+        await settle(function() { return sent.length > 0; });
+    } finally {
+        slotlib.signCSR = signCSR;
+        config.SIGNATURE_TIME_LIMIT = limit;
     }
-    assert.deepEqual(token.uses, ['renewal']);
-    assert.equal(iot.getBadpin()[SERIAL], undefined);
-    t.mock.timers.tick(5 * 60 * 1000);
-    for(let i = 0; i < 100 && token.uses.length == 1; i++) {
-        await new Promise(setImmediate);
-    }
-    assert.deepEqual(token.uses, ['renewal', 'renewal']);
 });
 
-test('characterization (before the PIN check): at slot load, a channel whose key pkcs11-provider couldn\'t read leaves the token without a channel but not stopped', async function() {
-    token.error = PROVIDER_UNREADABLE_KEY;
+test('a channel renewal whose key pkcs11-provider couldn\'t read stops the token when the login check rejects the PIN, and is tried again in 5 minutes otherwise', async function(t) {
+    for(let [result, stopped] of [['rejected', true], ['accepted', false]]) {
+        iot.setBadpin({});
+        token.uses.length = 0;
+        check.calls.length = 0;
+        check.result = result;
+        token.error = PROVIDER_UNREADABLE_KEY;
+        ca.channel.certinfo.attributes['Not After'] = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        iot.scheduleRenewal(ca, 0);
+        t.mock.timers.tick(0);
+        await settle(function() { return check.calls.length > 0; });
+        await flush();
+        assert.deepEqual(token.uses, ['renewal']);
+        assert.equal(check.calls[0].pin, '123456');
+        assert.equal(iot.getBadpin()[SERIAL] === true, stopped, result);
+        t.mock.timers.tick(5 * 60 * 1000);
+        await settle(function() { return token.uses.length > 1; });
+        assert.deepEqual(token.uses, stopped ? ['renewal'] : ['renewal', 'renewal'], result);
+        t.mock.timers.reset();
+    }
+});
+
+test('at slot load, a channel whose key pkcs11-provider couldn\'t read shows Invalid PIN when the login check rejects the PIN, and the error otherwise', async function() {
+    channel.current = false;
+    for(let [result, stopped] of [['rejected', true], ['accepted', false]]) {
+        iot.setBadpin({});
+        token.uses.length = 0;
+        check.result = result;
+        token.error = PROVIDER_UNREADABLE_KEY;
+        await new Promise(function(resolve) { iot.getChannels([], [ca], 0, resolve); });
+        assert.deepEqual(token.uses, ['channel']);
+        assert.equal(ca.channel.id, false);
+        assert.equal(ca.channel.message, stopped ? 'Invalid PIN' : PROVIDER_UNREADABLE_KEY, result);
+        assert.equal(iot.getBadpin()[SERIAL] === true, stopped, result);
+    }
+    // a login failure stops it without asking the token
+    iot.setBadpin({});
+    check.calls.length = 0;
+    token.error = NATIVE_WRONG_PIN;
     await new Promise(function(resolve) { iot.getChannels([], [ca], 0, resolve); });
-    assert.deepEqual(token.uses, ['channel']);
-    assert.equal(ca.channel.id, false);
-    assert.equal(ca.channel.message, PROVIDER_UNREADABLE_KEY);
-    assert.equal(iot.getBadpin()[SERIAL], undefined);
+    assert.equal(ca.channel.message, 'Invalid PIN');
+    assert.equal(check.calls.length, 0);
 });
