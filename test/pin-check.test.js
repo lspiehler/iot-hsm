@@ -22,6 +22,8 @@ case "$FAKE_PKCS11" in
   ok) echo "Private Key Object; RSA"; exit 0;;
   wrong) echo "error: PKCS11 function C_Login failed: rv = CKR_PIN_INCORRECT (0xa0)" >&2; echo "Aborting." >&2; exit 1;;
   locked) echo "error: PKCS11 function C_Login failed: rv = CKR_PIN_LOCKED (0xa4)" >&2; exit 1;;
+  device) echo "error: PKCS11 function C_Login failed: rv = CKR_DEVICE_ERROR (0x30)" >&2; echo "Aborting." >&2; exit 1;;
+  stubborn) trap '' TERM; echo $$ > "${bin}/stubborn.pid"; exec sleep 30;;
   slot) echo "error: PKCS11 function C_OpenSession failed: rv = CKR_SLOT_ID_INVALID (0x3)" >&2; echo "Aborting." >&2; exit 1;;
   slow) sleep 0.2; echo "Private Key Object; RSA"; exit 0;;
   hang) exec sleep 30;;
@@ -52,8 +54,10 @@ const calls = function() {
 test('the token\'s answer to a login: accepted, rejected (incorrect or locked) or unknown', async function() {
     for(let [mode, result, detail] of [
         ['ok', 'accepted', ''],
-        ['wrong', 'rejected', 'error: PKCS11 function C_Login failed: rv = CKR_PIN_INCORRECT (0xa0)'],
-        ['locked', 'rejected', 'error: PKCS11 function C_Login failed: rv = CKR_PIN_LOCKED (0xa4)'],
+        ['wrong', 'rejected', 'CKR_PIN_INCORRECT'],
+        ['locked', 'rejected', 'CKR_PIN_LOCKED'],
+        // a login that fails for another reason says nothing about the PIN
+        ['device', 'unknown', 'error: PKCS11 function C_Login failed: rv = CKR_DEVICE_ERROR (0x30)'],
         ['slot', 'unknown', 'error: PKCS11 function C_OpenSession failed: rv = CKR_SLOT_ID_INVALID (0x3)']
     ]) {
         process.env.FAKE_PKCS11 = mode;
@@ -90,10 +94,30 @@ test('no PIN, no pkcs11-tool, or no answer: unknown, and the agent keeps running
     let run = pkcs11tool.run;
     pkcs11tool.run = function(cmd, options, callback) { callback('', { exitcode: null, stderr: '' }); };
     try {
-        assert.deepEqual(await check(), { result: 'unknown', detail: 'pkcs11-tool gave no answer in 10 s' });
+        assert.deepEqual(await check(), { result: 'unknown', detail: 'pkcs11-tool gave no answer in 5 s' });
     } finally {
         pkcs11tool.run = run;
     }
+});
+
+test('a pkcs11-tool that ignores its time limit doesn\'t hold up the checks after it', async function() {
+    process.env.FAKE_PKCS11 = 'stubborn';
+    let started = Date.now();
+    assert.deepEqual(await check(), { result: 'unknown', detail: 'pkcs11-tool gave no answer in 5 s' });
+    assert.ok(Date.now() - started < 9000);
+    process.env.FAKE_PKCS11 = 'ok';
+    assert.deepEqual(await check(), { result: 'accepted', detail: '' });
+    // what the agent can't do yet (the later library change): stop it for good
+    process.kill(parseInt(fs.readFileSync(path.join(bin, 'stubborn.pid'), 'utf8')), 'SIGKILL');
+});
+
+test('pkcs11-tool\'s result names the PIN only as its environment variable', async function() {
+    process.env.FAKE_PKCS11 = 'ok';
+    let out = await new Promise(function(resolve) { pkcs11tool.run(['--module', 'm', '--login', '--pin', 'secret-pin'], function(err, out) { resolve(out); }); });
+    assert.match(out.command, /--pin env:IOTHSM_PIN_\d+/);
+    assert.ok(out.command.indexOf('secret-pin') < 0);
+    out = await new Promise(function(resolve) { pkcs11tool.run('--module m --login --pin secret-pin', function(err, out) { resolve(out); }); });
+    assert.ok(out.command.indexOf('secret-pin') < 0);
 });
 
 test('pkcs11-tool runs no longer than its time limit, and a missing pkcs11-tool is an error, not a crash', async function() {

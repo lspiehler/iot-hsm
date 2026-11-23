@@ -14,8 +14,6 @@ module.exports = {
 	GOOGLE_KMS_CONCURRENCY: process.env.GOOGLE_KMS_CONCURRENCY || 4,
 	SOFTHSM_CONCURRENCY: process.env.SOFTHSM_CONCURRENCY || 2,
 	NATIVESIGNING: process.env.NATIVESIGNING || false,
-	// seconds a signature may run before the agent checks the token's PIN (one may be hanging on a rejected PIN)
-	SIGNATURE_TIME_LIMIT: process.env.SIGNATURE_TIME_LIMIT || 15,
 	// the name the platform shows for this appliance instead of its ID; none by default (never the hostname)
 	AGENT_NAME: process.env.AGENT_NAME || ''
 }
