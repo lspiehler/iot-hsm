@@ -33,7 +33,8 @@ const channel = { current: true };
 stub('lib/smime/index', { x509: {
     lifetime: 60,
     isCurrent: function() { return channel.current; },
-    renewCert: function(cert, callback) { use('renewal')({}, callback); }
+    renewCert: function(cert, callback) { use('renewal')({}, callback); },
+    getCert: function(cert, callback) { use('channel')({}, callback); }
 } });
 
 // load IoTHSM.js with its handlers exposed; the platform's signature check and the encryption and signing of replies are replaced
@@ -49,7 +50,7 @@ encryptMessage = function(params, callback) { callback(false, params.signed); };
 sendSignedMessage = function(params, callback) { module.exports.__sent.push(params); callback(false, {}); };
 pubnub = { getUUID: function() { return 'agent-uuid'; } };
 module.exports.__t = { messageReceived: messageReceived, setCerts: function(c) { certs = c; }, getBadpin: function() { return badpin; },
-    setBadpin: function(b) { badpin = b; }, getQueue: getQueue, scheduleRenewal: scheduleRenewal };`, iotfile);
+    setBadpin: function(b) { badpin = b; }, getQueue: getQueue, scheduleRenewal: scheduleRenewal, getChannels: getChannels };`, iotfile);
 iotmod.exports.__sent = sent;
 const iot = iotmod.exports.__t;
 
@@ -270,4 +271,31 @@ test('characterization (before the time limit): a signature that never answers l
     } finally {
         slotlib.signCMS = signCMS;
     }
+});
+
+test('characterization (before the PIN check): a renewal whose key pkcs11-provider couldn\'t read is tried again in 5 minutes', async function(t) {
+    token.error = PROVIDER_UNREADABLE_KEY;
+    ca.channel.certinfo.attributes['Not After'] = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    iot.scheduleRenewal(ca, 0);
+    t.mock.timers.tick(0);
+    for(let i = 0; i < 100 && token.uses.length == 0; i++) {
+        await new Promise(setImmediate);
+    }
+    assert.deepEqual(token.uses, ['renewal']);
+    assert.equal(iot.getBadpin()[SERIAL], undefined);
+    t.mock.timers.tick(5 * 60 * 1000);
+    for(let i = 0; i < 100 && token.uses.length == 1; i++) {
+        await new Promise(setImmediate);
+    }
+    assert.deepEqual(token.uses, ['renewal', 'renewal']);
+});
+
+test('characterization (before the PIN check): at slot load, a channel whose key pkcs11-provider couldn\'t read leaves the token without a channel but not stopped', async function() {
+    token.error = PROVIDER_UNREADABLE_KEY;
+    await new Promise(function(resolve) { iot.getChannels([], [ca], 0, resolve); });
+    assert.deepEqual(token.uses, ['channel']);
+    assert.equal(ca.channel.id, false);
+    assert.equal(ca.channel.message, PROVIDER_UNREADABLE_KEY);
+    assert.equal(iot.getBadpin()[SERIAL], undefined);
 });
