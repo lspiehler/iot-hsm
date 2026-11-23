@@ -31,6 +31,10 @@ const channel = { current: true };
 stub('lib/smime/index', { x509: { lifetime: 60, isCurrent: function() { return channel.current; }, renewCert: function(cert, callback) { use('renewal')({}, callback); } } });
 
 const nativeSigning = require(path.join(root, 'lib/nativeSigning'));
+// the PIN check logs in to the token; here it answers what the test says
+const pincheck = require(path.join(root, 'lib/pinCheck'));
+const check = { result: 'accepted', calls: [] };
+pincheck.checkPin = function(params, callback) { check.calls.push(params); setImmediate(function() { callback(check.result, ''); }); };
 
 const sent = [];
 const iotfile = path.join(root, 'lib/IoTHSM.js');
@@ -64,6 +68,7 @@ test.beforeEach(function() {
     ca = caEntry(); iot.setCerts([ca]); iot.setBadpin({});
     token.uses.length = 0; token.calls.length = 0; token.error = false; channel.current = true; sent.length = 0;
     iotmod.exports.__senderr = false;
+    check.result = 'accepted'; check.calls.length = 0;
 });
 test.after(function() { fs.rmSync(process.env.STATEDIR, { recursive: true, force: true }); });
 
@@ -122,23 +127,37 @@ test('ct-final: a malformed request is refused without touching the token, one r
     }
 });
 
-test('ct-final: a rejected PIN stops the token, also as pkcs11-provider reports it (a key it can\'t find)', async function() {
-    for(let error of ['PKCS#11 login: CKR_PIN_INCORRECT', 'PKCS11_login:... Login failed', 'openssl dgst: Could not find private key from the token\'s key', 'openssl dgst: Could not open file or uri for loading key from the token\'s key']) {
-        iot.setBadpin({}); token.uses.length = 0; sent.length = 0; token.error = error;
-        await request('ct-final', 'pin-' + error.length, good);
+test('ct-final: a rejected PIN stops the token; as pkcs11-provider reports it (a key it can\'t read), once a login to the token rejects it', async function() {
+    check.result = 'rejected';
+    for(let error of ['PKCS#11 login: CKR_PIN_INCORRECT', 'PKCS11_login:... Login failed', 'openssl dgst: Could not find private key from the token\'s key', 'openssl dgst: Could not read private key from the token\'s key', 'openssl dgst: Could not open file or uri for loading key from the token\'s key']) {
+        iot.setBadpin({}); token.uses.length = 0; sent.length = 0; token.error = error; check.calls.length = 0;
+        await request('ct-final', 'pin-' + error, good);
         assert.deepEqual(token.uses, ['ct-final']);
         let reply = lastReply();
         assert.equal(reply.signed.success, false);
         assert.equal(reply.signed.message, error);
         assert.equal(iot.getBadpin()[SERIAL], true, error);
+        // a login failure needs no check; a key it couldn't read is checked once, with the agent's PIN
+        assert.equal(check.calls.length, /Could not/.test(error) ? 1 : 0, error);
+        if(check.calls.length) {
+            assert.equal(check.calls[0].pin, 'the-user-pin');
+        }
         // the next request doesn't use the token
-        await request('ct-final', 'pin2-' + error.length, good);
+        await request('ct-final', 'pin2-' + error, good);
         assert.deepEqual(token.uses, ['ct-final'], error);
     }
-    // another failure leaves the token in use
+    // with the PIN accepted by the login (two key loads racing on the token), the token stays in use
+    check.result = 'accepted';
+    iot.setBadpin({}); token.error = 'openssl dgst: Could not find private key from the token\'s key';
+    await request('ct-final', 'race-1', good);
+    assert.equal(iot.getBadpin()[SERIAL], undefined);
+    assert.equal(lastReply().signed.success, false);
+    // another failure leaves the token in use, unchecked
+    check.calls.length = 0;
     iot.setBadpin({}); token.error = 'check precertificate: it has an SCT list already';
     await request('ct-final', 'other-1', good);
     assert.equal(iot.getBadpin()[SERIAL], undefined);
+    assert.equal(check.calls.length, 0);
 });
 
 test('ct-final: a replayed siguuid is ignored (no token use, no reply)', async function() {
