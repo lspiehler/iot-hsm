@@ -230,3 +230,44 @@ test('with the PIN accepted, the token offers and signs as before', async functi
     assert.deepEqual(token.uses, ['csr']);
     assert.equal(lastReply().signed.success, true);
 });
+
+// pkcs11-provider (OpenSSL 3.0.13 + pkcs11-provider 0.3 on Ubuntu 24.04, SoftHSM) reports a rejected PIN for csr and crl only as a key
+// it couldn't read; the same message comes from two key loads racing on one token with the right PIN (agent 1.0.1's parallel signing)
+const PROVIDER_UNREADABLE_KEY = 'Using configuration from openssl.cnf\nCould not read CA private key from pkcs11:serial=' + SERIAL + ';id=%10;type=private\n';
+
+test('characterization (before the PIN check): a key pkcs11-provider couldn\'t read leaves the token in use', async function() {
+    for(let signtype of ['csr', 'crl']) {
+        iot.setBadpin({});
+        token.uses.length = 0;
+        token.error = PROVIDER_UNREADABLE_KEY;
+        await requestSignature(signtype, 'unreadable-' + signtype);
+        assert.equal(iot.getBadpin()[SERIAL], undefined, signtype);
+        await requestSignature(signtype, 'unreadable-' + signtype + '-2');
+        assert.deepEqual(token.uses, [signtype, signtype], signtype);
+    }
+});
+
+test('characterization (before the time limit): a signature that never answers leaves the token in use, and the queue moves on after 5 s', async function(t) {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let hung = 0;
+    let slotlib = require(path.join(root, 'lib/slotlib'));
+    let signCMS = slotlib.signCMS;
+    slotlib.signCMS = function() { hung++; };
+    try {
+        let request = { siguuid: 'hang-1', request: { options: { inform: 'PEM', outform: 'PEM' } } };
+        await receive({ type: 'signature request', ttl: 10, caindex: 0, signtype: 'cms', smime: zlib.deflateSync(JSON.stringify(request)).toString('base64') });
+        let queue = iot.getQueue(ca);
+        for(let i = 0; i < 100 && hung == 0; i++) {
+            await new Promise(setImmediate);
+        }
+        assert.equal(hung, 1);
+        assert.equal(queue.running, 1);
+        t.mock.timers.tick(5000);
+        assert.equal(queue.running, 0);
+        t.mock.timers.tick(60000);
+        assert.equal(iot.getBadpin()[SERIAL], undefined);
+        assert.equal(sent.length, 0);
+    } finally {
+        slotlib.signCMS = signCMS;
+    }
+});
