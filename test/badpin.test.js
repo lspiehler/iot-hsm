@@ -464,3 +464,11 @@ test('a channel certificate renewed for a message, whose key pkcs11-provider cou
         assert.equal(iot.getBadpin()[SERIAL] === true, stopped, result);
     }
 });
+
+test('characterization: a message on a stopped token whose channel certificate isn\'t current renews it with the rejected PIN', async function() {
+    channel.current = false;
+    iot.setBadpin({ [SERIAL]: true });
+    token.error = PROVIDER_UNREADABLE_KEY;
+    await new Promise(function(resolve) { iot.signMessage({ cert: ca, signed: 'reply' }, resolve); });
+    assert.deepEqual(token.uses, ['channel']);
+});
