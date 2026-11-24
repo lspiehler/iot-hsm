@@ -11,6 +11,14 @@ apt update
 #Install curl
 apt -y install curl
 
+#Install the latest release, the one the platform offers as the update (pre-releases are skipped), never unreleased code
+IOTHSM_TAG=$(curl -fsSL https://api.github.com/repos/lspiehler/iot-hsm/releases/latest | sed -nE 's/^ *"tag_name": *"(v[0-9]+\.[0-9]+\.[0-9]+)",?$/\1/p')
+if [ -z "$IOTHSM_TAG" ]; then
+  echo "Couldn't look up the latest IoT-HSM release (https://github.com/lspiehler/iot-hsm/releases/latest), so IoT-HSM wasn't installed. Check that this machine can reach api.github.com; if it can, GitHub may be limiting lookups from this address (60 an hour), so run the script again later. If the release page shows a version that doesn't look like v1.2.3, the release itself needs fixing." >&2
+  exit 1
+fi
+echo "Installing IoT-HSM $IOTHSM_TAG, the latest release"
+
 #Install node repos
 curl -sL https://deb.nodesource.com/setup_24.x | bash -
 
@@ -66,12 +74,13 @@ mkdir /var/node
 chown iothsm:iothsm /var/node
 cd /var/node
 
-#Clone git repo and change working dir
-sudo -u iothsm git clone https://github.com/lspiehler/iot-hsm.git
+#Clone the release and change working dir
+sudo -u iothsm git -c advice.detachedHead=false clone --branch "$IOTHSM_TAG" https://github.com/lspiehler/iot-hsm.git
 cd iot-hsm
 
-#Install node dependencies
-sudo -u iothsm npm install
+#Install the release's exact dependencies, as the README's update steps do; the only install scripts (the unused zlib
+#package, and protobufjs's postinstall, which only prints a version warning) are not needed
+sudo -u iothsm npm ci --ignore-scripts
 
 #Install pm2 to run service as a daemon
 npm install pm2 -g
@@ -221,8 +230,50 @@ a2enmod rewrite headers proxy proxy_balancer lbmethod_byrequests proxy_http prox
 #Restart Apache
 systemctl restart apache2
 
-#Open necessary firewall ports
-ufw allow 'Apache'
+#The TCP ports sshd listens on: the sockets of the sshd service itself (not the ones its sessions open for port
+#forwarding), and with socket activation (the default since Ubuntu 24.04) the ones systemd listens on for it
+ssh_listen_ports() {
+  local pid
+  pid=$(systemctl show -p MainPID --value ssh.service)
+  {
+    if [ "${pid:-0}" != 0 ]; then
+      ss -Htlnp | awk -v sshd="(\"sshd\",pid=$pid," 'index($0, sshd) {print $4}'
+    fi
+    if systemctl -q is-active ssh.socket; then
+      systemctl show -p Listen --value ssh.socket | grep -oE '[^ ]+ \(Stream\)' | cut -d' ' -f1
+    fi
+  } | sed -E 's/.*:([0-9]+)$/\1/' | grep -E '^[0-9]+$' | sort -nu
+}
+
+#Firewall: when ufw is off, allow SSH first, so that turning ufw on can't cut off an SSH session (this one included),
+#then the web interface (80 only redirects to 443), then turn it on. When ufw is already on, its owner has already
+#decided who may use SSH, so only the web interface is added
+WEB_ALLOWED="the web interface (ports 80 and 443)"
+if LANGUAGE='' LC_ALL=C ufw status | grep -q '^Status: active'; then
+  ufw allow 80/tcp comment 'IoT-HSM web interface (redirects to HTTPS)'
+  ufw allow 443/tcp comment 'IoT-HSM web interface'
+  FIREWALL_NOTE="The firewall (ufw) was already on, so its SSH rules were left as they are; it now also allows $WEB_ALLOWED."
+else
+  SSH_PORTS=$(ssh_listen_ports | paste -sd' ')
+  for port in $SSH_PORTS; do
+    ufw allow "$port/tcp" comment 'SSH'
+  done
+  ufw allow 80/tcp comment 'IoT-HSM web interface (redirects to HTTPS)'
+  ufw allow 443/tcp comment 'IoT-HSM web interface'
+  if [[ $SSH_PORTS == *" "* ]]; then
+    SSH_ALLOWED="SSH (ports ${SSH_PORTS// /, }, where sshd listens)"
+  else
+    SSH_ALLOWED="SSH (port $SSH_PORTS, where sshd listens)"
+  fi
+  if [ -z "$SSH_PORTS" ]; then
+    FIREWALL_NOTE="The firewall (ufw) is off: no port that sshd listens on was found, so turning it on could lock you out of SSH. It has rules for $WEB_ALLOWED, which apply once it is on. To turn it on, allow the port you use for SSH first: \"ufw allow PORT/tcp && ufw enable\", with PORT replaced by that port."
+  elif ufw --force enable; then
+    FIREWALL_NOTE="The firewall (ufw) is on and allows $SSH_ALLOWED and $WEB_ALLOWED."
+  else
+    FIREWALL_NOTE="The firewall (ufw) couldn't be turned on (ufw printed why after adding its rules). It has rules for $SSH_ALLOWED and $WEB_ALLOWED; to try again, run \"ufw enable\"."
+  fi
+fi
+echo "$FIREWALL_NOTE"
 
 #Create default admin user if .htpasswd doesn't exist
 if [ ! -f "/etc/apache2/.htpasswd" ]; then
@@ -238,8 +289,19 @@ htpasswd -vb /etc/apache2/.htpasswd admin admin 2> /dev/null && echo "Enter a ne
 
 #Show banner
 banner IoT-HSM
-echo "You've successfully installed IoT-HSM"
-echo 
+#A run over an earlier install leaves /var/node/iot-hsm as it was (git clone doesn't overwrite it)
+INSTALLED_TAG=$(sudo -u iothsm git -C /var/node/iot-hsm describe --tags --exact-match 2> /dev/null)
+if [ "$INSTALLED_TAG" = "$IOTHSM_TAG" ]; then
+  echo "You've successfully installed IoT-HSM $IOTHSM_TAG"
+else
+  INSTALLED_CODE=${INSTALLED_TAG:-"code that is not a release"}
+  echo "You've successfully installed IoT-HSM"
+  echo
+  echo "/var/node/iot-hsm was already there, so it wasn't replaced with the latest release, $IOTHSM_TAG; it has $INSTALLED_CODE. To update it, follow the README's steps for updating an installed agent (https://github.com/lspiehler/iot-hsm#readme)."
+fi
+echo
+echo "$FIREWALL_NOTE"
+echo
 echo "The certificates for this appliance can be replaced by updating /etc/ssl/certs/iothsm.pem and /etc/ssl/private/iothsm.key and reloading apache with the command \"systemctl reload apache2\""
 echo
 echo "The password for the web interface can be changed by running the command \"htpasswd /etc/apache2/.htpasswd admin\""

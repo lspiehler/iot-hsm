@@ -9,6 +9,10 @@ apt -y install curl
 curl -sL https://raw.githubusercontent.com/lspiehler/iot-hsm/master/scripts/setup_ubuntu.sh | bash -
 ```
 
+The script installs the latest release of IoT-HSM (the one shown at https://github.com/lspiehler/iot-hsm/releases/latest), not the newest code on `master`. If it can't look the release up, it stops before installing IoT-HSM.
+
+The script turns on the firewall (ufw) if it is off. It first allows the TCP ports that sshd listens on, so that turning the firewall on doesn't cut off SSH, then ports 80 and 443 for the web interface (80 only redirects to HTTPS), and then turns ufw on. If ufw is already on, the script leaves its SSH rules as they are and only allows ports 80 and 443. If ufw is off and the script finds no port that sshd listens on, it adds the rules for ports 80 and 443 but leaves ufw off and prints how to turn it on. If you move SSH to another port later, allow the new port in ufw first, for example `ufw allow 2222/tcp`.
+
 Once IoT-HSM is installed, the script asks for a name for the appliance, which the platform shows instead of the appliance's ID. Press Enter to use the hostname (offered only when it is a valid name). Without a terminal, for example in automation, the appliance gets no name unless you set it before running the script: `curl -sL ... | AGENT_NAME="Rack 4 HSM" bash -` (`AGENT_NAME=` sends no name). Run that as root rather than through `sudo`, which drops `AGENT_NAME`. Run the script in the foreground: in the background it stops at the question. A name is 1 to 64 letters, digits, spaces and `. _ - ( ) # : / @`; one the platform wouldn't accept is not saved. The name is saved in `/var/node/iot-hsm/.env`; to change it later, edit `AGENT_NAME` there and run `sudo -u iothsm pm2 restart iot-hsm`.
 
 You should now be able to login and begin managing your HSM by navigating to https://youripaddress
@@ -65,7 +69,7 @@ git push origin v1.0.0
 gh release create v1.0.0 --verify-tag --title "IoT-HSM 1.0.0" --generate-notes
 ```
 To update an installed agent to a release:
-- Ubuntu install (pm2): as the `iothsm` user in `/var/node/iot-hsm`, run `git fetch --tags && git checkout v1.0.0`, then `npm ci --ignore-scripts` (dependencies can change between versions; the only install script, in the unused `zlib` package, is not needed), then `pm2 restart iot-hsm`.
+- Ubuntu install (pm2): as the `iothsm` user in `/var/node/iot-hsm`, run `git fetch --tags && git checkout v1.0.0`, then `npm ci --ignore-scripts` (dependencies can change between versions; their install scripts, a build in the unused `zlib` package and a version warning in `protobufjs`, are not needed), then `pm2 restart iot-hsm`.
 - Docker: pull the new image and recreate the container with the same volumes and settings.
 
 PKIaaS.io reads the latest release of this repository to tell HSM owners when an update is available. Pre-releases (for example `v1.1.0-rc.1`, published with `--prerelease`) are ignored, so use them for testing.
